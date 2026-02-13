@@ -1,0 +1,86 @@
+STOP. The last “style pass” produced no meaningful visual upgrade. I need a REAL modern enterprise SaaS redesign across ALL pages.
+
+ROLE: You are a senior product designer + frontend engineer. Your ONLY task is to transform the UI to look like a premium, modern logistics/tech SaaS (2026 style). Do NOT touch backend logic, auth logic, DB, routes, API calls, or business logic. FRONTEND VISUAL ONLY.
+
+NON-NEGOTIABLE RULES:
+1) Do not modify anything in /server/* or shared backend logic. Do not change API routes, auth/session behavior, or database models.
+2) Do not add new pages or new routes. Do not rename existing routes.
+3) Do not change service structure or pricing. Do not invent features/sections.
+4) You MAY restructure layout markup inside existing pages to improve UI (containers, grids, wrappers), but must keep the same content and meaning.
+5) Must result in a clearly different, professional UI. If the UI still looks “basic”, you failed.
+
+TARGET STYLE (must look like a real funded SaaS):
+- Clean typography hierarchy, premium spacing, consistent components
+- Container max-width, real grid system, responsive breakpoints
+- Modern header with tight spacing, balanced nav, clear CTA
+- Cards with subtle borders/shadows, consistent radius, hover states
+- Buttons that feel like Stripe/Notion/Linear quality (primary/secondary/ghost)
+- Forms that look enterprise: labels, helper text, error states, focus rings
+- Subtle background treatment (light neutral + soft sections), not flat empty white
+- Dashboard must look like a product UI (not a landing page)
+
+DESIGN SYSTEM REQUIREMENT (must implement):
+Create a small design system in CSS:
+- CSS variables: colors, typography scale, spacing scale, radius, shadows
+- Base styles: body, headings, paragraph, link, lists
+- Components: .container, .grid, .card, .card-header, .card-body
+- Buttons: .btn, .btn-primary, .btn-secondary, .btn-ghost, .btn-sm
+- Forms: .field, label, input, select, textarea, .help, .error
+- Badges/Tags: .badge, .badge-info, .badge-success, .badge-warning
+- Tables (for Billing/Invoices future): .table basic styling
+- States: hover, active, focus-visible, disabled
+- Responsive: 3 breakpoints (mobile/tablet/desktop)
+
+MANDATORY VISUAL CHANGES BY PAGE:
+A) Header/Footer (global):
+- Reduce excessive spacing and make alignment premium
+- Add active-link indicator
+- Add right-aligned auth buttons with consistent sizing
+- Add a single primary CTA style (e.g., “Get Started”)
+- Footer with structured columns (company, links, legal) but do NOT add new links beyond what already exists; just layout improvements.
+
+B) Landing:
+- Hero section must look premium: headline, subtext, CTA row, trust strip
+- Add section backgrounds and spacing so it doesn’t look empty
+- Feature cards in a modern grid with icons (use simple inline SVG or existing icon library ONLY if already installed; otherwise use minimal inline SVG)
+
+C) Services:
+- Cards must look like product pricing/service tiles (no new prices, keep existing)
+- Better hierarchy and spacing, consistent buttons/links
+
+D) About / Designed For / Sample:
+- Use consistent section blocks, headings, card grids
+- Make “Sample” look like a polished preview page
+
+E) Contact:
+- Professional form layout, clear field spacing, submission states styling
+
+F) Auth pages (Login/Signup):
+- Centered auth panel with brand header
+- Input styling, show/hide toggle already exists—make it look premium
+- Helpful microcopy styling (no new copy, only layout)
+
+G) Dashboard:
+- Must look like an account portal:
+  - Left: main content area with cards stacked or grid
+  - Strong card headers and aligned fields
+  - Empty states styled (PDFs, Invoices, Subscriptions)
+- Do NOT add admin features now. Do NOT add new dashboard sections. Only redesign the visuals of what exists.
+
+IMPLEMENTATION INSTRUCTIONS:
+1) Identify the current CSS file used globally (client/src/styles.css or index.css). Refactor it into a true design system using variables + component classes.
+2) Update each page component markup minimally to use the new classes (container, grid, card, etc.).
+3) Ensure no inline styles remain except where absolutely unavoidable.
+4) Verify responsiveness: mobile nav, cards stack, forms full width.
+5) Run through ALL existing routes to confirm nothing broke.
+
+DELIVERABLES:
+- Provide “Before/After style summary” (short, bullet list)
+- Provide file list changed
+- Confirm explicitly:
+  “Backend untouched”
+  “No new routes/pages”
+  “No pricing/service changes”
+- Confirm visually significant redesign completed.
+
+DO IT NOW. Do not ask questions. Do not do backend changes. Do not add new features. Focus on premium UI.

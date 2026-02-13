@@ -1,0 +1,147 @@
+Implement “Trade.gov Intelligence Source (Phase 1: curated ingestion)” for Meru-LBIA without breaking existing logic.
+
+STRICT RULES:
+- Do NOT modify existing business logic outputs unless explicitly required below.
+- Do NOT add QA/tests.
+- Do NOT refactor unrelated files.
+- Do NOT change existing routes except adding the minimal new admin route required.
+- Keep all current behavior for Logistics / Compliance / Combined modes.
+- Fail safely if new DB tables do not exist (must fallback to current static intelligence).
+
+OBJECTIVE:
+Add a curated, verifiable intelligence layer sourced from trade.gov content, stored in Supabase, and referenced by the Intelligence Engine using a DB-first strategy.
+
+IMPORTANT:
+This is NOT runtime scraping.
+This is curated ingestion stored in our DB.
+Runtime = DB lookup only.
+
+========================================
+PHASE 1 – DATABASE STRUCTURE
+========================================
+
+Create Supabase DDL (output as SQL at the END of your response only, do not auto-run it).
+
+Tables:
+
+1) meru_tradegov_sources
+- id (uuid pk default gen_random_uuid())
+- title text not null
+- url text not null
+- publisher text
+- updated_at timestamptz
+- created_at timestamptz default now()
+
+2) meru_tradegov_entries
+- id (uuid pk default gen_random_uuid())
+- country_code text
+- country_name text
+- topic text
+- summary text
+- tags text[]
+- risk_level text
+- barriers text[]
+- regulatory_flags text[]
+- sector_insights text[]
+- source_id uuid references meru_tradegov_sources(id) on delete cascade
+- effective_date timestamptz
+- created_at timestamptz default now()
+
+Indexes:
+- index on country_code
+- index on topic
+- index on source_id
+
+Do NOT include RLS yet.
+
+========================================
+PHASE 2 – SERVER DB LOADER
+========================================
+
+Create file:
+server/intelligence/intelligence.tradegov.db.ts
+
+Export function:
+
+loadTradeGovIntelligence(
+  country: string
+): Promise<IntelligenceResult | null>
+
+Behavior:
+- Query meru_tradegov_entries where country_code OR country_name matches input
+- Order by effective_date desc nulls last
+- Return the latest entry
+- Map DB record into existing IntelligenceResult structure
+- If no match, return null
+- If table does not exist, catch error and return null (fail-safe)
+
+========================================
+PHASE 3 – ENGINE INTEGRATION
+========================================
+
+Modify:
+server/intelligence/intelligence.engine.ts
+
+New logic:
+1) Try DB tradegov intelligence first
+2) If result exists → return it
+3) Else fallback to existing static intelligence
+4) Must NOT change existing static logic
+
+========================================
+PHASE 4 – ADMIN INGEST ROUTE
+========================================
+
+Add new route:
+
+POST /admin/intelligence/tradegov/ingest
+
+Requirements:
+- Must reuse existing admin-only protection
+- Accept JSON body:
+  {
+    country_code,
+    country_name,
+    topic,
+    summary,
+    tags,
+    risk_level,
+    barriers,
+    regulatory_flags,
+    sector_insights,
+    source: {
+        title,
+        url,
+        publisher,
+        updated_at
+    }
+  }
+
+Behavior:
+- Insert source into meru_tradegov_sources
+- Insert entry referencing source_id
+- Return { ok: true, id }
+
+No UI required.
+
+========================================
+PHASE 5 – DOCUMENTATION
+========================================
+
+Update replit.md:
+- Explain DB-first intelligence flow
+- Explain how to ingest via curl example
+- Explain fallback behavior
+
+========================================
+DELIVERABLE FORMAT
+========================================
+
+1) List files created
+2) List files modified
+3) Confirm no unrelated logic changed
+4) Provide the full Supabase SQL DDL in ONE single SQL block at the end
+5) Do NOT execute the SQL automatically
+6) Do NOT modify any other business features
+
+End.

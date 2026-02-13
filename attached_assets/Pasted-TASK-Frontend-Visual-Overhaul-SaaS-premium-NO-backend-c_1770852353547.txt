@@ -1,0 +1,55 @@
+TASK: Frontend Visual Overhaul (SaaS premium) — NO backend changes.
+
+NON-NEGOTIABLE RULES:
+1) Do NOT modify any server/ files, shared/ models, routes, or any backend logic. Frontend only.
+2) Do NOT change the site structure, page routes, or menu items. Keep existing pages and links.
+3) Do NOT add new services, new prices, or new business claims. Only improve copy quality and visual presentation of existing content.
+4) Produce a REAL visible improvement (not subtle). After completion, provide “PROOF” by listing 6 concrete visual changes a user can see on: /, /services, /about, /designed-for, /sample, /contact.
+5) If anything breaks layout or routes, rollback and fix before finalizing.
+
+GOAL:
+Make the UI look like a modern enterprise logistics/tech SaaS (Stripe-level cleanliness, Notion-level spacing, premium typography, strong but professional). Improve BOTH:
+- Visual design (CSS)
+- Copywriting quality (headlines, subheads, bullet points) in a persuasive and professional tone
+
+SCOPE:
+A) Design system upgrade (client/src/styles.css)
+- Define clear design tokens using CSS variables: spacing scale, font sizes, radius scale, shadows, border colors, surface backgrounds.
+- Improve typography hierarchy (H1/H2/H3, body, muted text).
+- Improve buttons (primary/secondary), hover states, focus states (accessible), and link styling.
+- Improve cards (elevation, border, spacing, icon alignment).
+- Improve section spacing, max-width container, responsive layout.
+- Ensure mobile looks premium (not stacked awkwardly). Use breakpoints already present but refine.
+
+B) Page-by-page improvements (copy + layout only, no new routes)
+1) Landing:
+- Hero: stronger headline/subheadline formatting, better CTA area, add a small “trust strip” row (no fake numbers; use generic trust language like “Decision intelligence. Not quotes. Built for importers, forwarders, project cargo.”)
+- Improve “what you get” section with 3–5 crisp deliverables (short bullets).
+2) Services:
+- Make service groups visually distinct, with better info density and clear “Start” CTA buttons.
+- Keep existing pricing exactly as-is.
+3) About:
+- Rewrite copy to sound like an expert logistics intelligence company (not generic). Keep it concise.
+4) Designed-for:
+- Make the three audiences more convincing and specific (Importer/Exporter, Forwarder/NVOCC, Project Cargo).
+5) Sample:
+- Make it look like a polished preview page. Ensure the “View Sample PDF” button is prominent and opens in new tab if it already does.
+6) Contact:
+- Upgrade the form styling, add a small “response time” line (generic, no promises like “24h” unless already present).
+
+C) Dashboard visual polish (frontend only)
+- Make the dashboard cards feel like an enterprise account portal: better spacing, headings, subtle icons, consistent button styles.
+- Do NOT add admin features, do NOT add service selector again.
+
+FILES YOU MAY EDIT:
+- client/src/styles.css
+- client/src/pages/*.tsx (copy + layout tweaks)
+- client/src/components/Header.tsx and Footer.tsx (layout polish only)
+
+DELIVERABLE:
+When done, output:
+1) List of files changed.
+2) “PROOF” section: 6 very specific visible differences a user can verify without devtools.
+3) Confirm: “No backend changes.”
+
+START NOW.

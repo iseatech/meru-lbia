@@ -1,0 +1,108 @@
+STRICT IMPLEMENTATION MODE.
+Do NOT add features outside this instruction.
+Do NOT modify existing files.
+Do NOT refactor anything unrelated.
+
+OBJECTIVE:
+Create the foundational Intelligence Engine module for Meru-LBIA.
+No external API calls yet.
+No UI changes.
+No pricing changes.
+
+CREATE FOLDER:
+server/intelligence/
+
+CREATE FILE 1:
+server/intelligence/intelligence.types.ts
+
+Content:
+
+export type CountryRiskLevel = "LOW" | "MEDIUM" | "HIGH";
+
+export interface TradeBarrier {
+  type: string;
+  description: string;
+}
+
+export interface RegulatoryFlag {
+  agency: string;
+  note: string;
+}
+
+export interface SectorInsight {
+  sector: string;
+  comment: string;
+}
+
+export interface IntelligenceResult {
+  country: string;
+  countryRisk: CountryRiskLevel;
+  geopoliticalNotes?: string[];
+  tradeBarriers?: TradeBarrier[];
+  regulatoryFlags?: RegulatoryFlag[];
+  sectorInsights?: SectorInsight[];
+  source: "STATIC" | "DB" | "EXTERNAL_API";
+}
+
+
+CREATE FILE 2:
+server/intelligence/intelligence.sources.ts
+
+Content:
+
+import { IntelligenceResult } from "./intelligence.types";
+
+export function staticCountryIntelligence(country: string): IntelligenceResult {
+  // Temporary static mapping (to be replaced with DB/API later)
+  const normalized = country.toLowerCase();
+
+  if (normalized === "china") {
+    return {
+      country: "China",
+      countryRisk: "MEDIUM",
+      geopoliticalNotes: ["Section 301 tariffs may apply."],
+      tradeBarriers: [{ type: "Tariff", description: "Additional duties on certain HS codes." }],
+      source: "STATIC"
+    };
+  }
+
+  if (normalized === "russia") {
+    return {
+      country: "Russia",
+      countryRisk: "HIGH",
+      geopoliticalNotes: ["Sanctions environment evolving."],
+      tradeBarriers: [{ type: "Sanctions", description: "Export restrictions and financial limitations." }],
+      source: "STATIC"
+    };
+  }
+
+  return {
+    country,
+    countryRisk: "LOW",
+    source: "STATIC"
+  };
+}
+
+
+CREATE FILE 3:
+server/intelligence/intelligence.engine.ts
+
+Content:
+
+import { IntelligenceResult } from "./intelligence.types";
+import { staticCountryIntelligence } from "./intelligence.sources";
+
+export async function runIntelligenceEngine(
+  country: string
+): Promise<IntelligenceResult> {
+
+  if (!country) {
+    throw new Error("Country is required for intelligence analysis");
+  }
+
+  // Phase 1: static
+  return staticCountryIntelligence(country);
+}
+
+DO NOT modify any other files.
+Return a summary of files created only.

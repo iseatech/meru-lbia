@@ -1,0 +1,59 @@
+ROLE: You are the frontend lead of an enterprise SaaS. Your job is ONLY to upgrade visual design (CSS + small UI JS interactions) across the existing React pages, WITHOUT touching backend, DB, auth, routes, or business logic. You must NOT add new pages, new services, new pricing, new navigation items, or new features. You must NOT change copy text meaning—only improve layout, typography, spacing, and component styling. Do not remove existing functionality. Do not refactor architecture.
+
+HARD RULES:
+1) FRONTEND ONLY. Do not edit /server/*, shared/models, auth/session, or any API endpoints.
+2) Do not add or rename routes. Do not change existing page content structure beyond styling and layout.
+3) Do not invent anything: no new sections, no new services, no new pricing, no new “features”. Keep everything as-is.
+4) Use a consistent enterprise design system: modern SaaS look, clean, premium, logistics/tech vibe.
+5) Accessibility: readable contrast, focus states, hover states, responsive (mobile/tablet/desktop).
+6) Performance: no heavy libraries, no new UI frameworks. Use existing stack only.
+
+TARGET VISUAL STYLE (enterprise SaaS):
+- Typography: Inter or system font (keep consistent).
+- Layout: max-width container, generous whitespace, proper grid.
+- Colors: deep navy + subtle teal accents + neutral grays. Avoid loud gradients.
+- Components: consistent buttons, inputs, cards, tables, badges, alerts.
+- Header: compact, balanced spacing (no huge gaps). Sticky is OK but must look premium.
+- Dashboard: should look like a real product (cards, sections, subtle separators, tidy forms, no “basic HTML” look).
+
+SCOPE:
+A) Global styling polish:
+- Improve client/src/styles.css (or existing main CSS file) to define:
+  - CSS variables (colors, spacing, radius, shadows)
+  - base typography (h1-h6, p)
+  - button styles (primary/secondary/ghost, small/normal)
+  - card styles
+  - form styles (inputs, labels, validation text)
+  - nav styles (header alignment, active link style)
+  - responsive rules (mobile menu spacing)
+- Keep selectors clean and consistent; avoid inline styles.
+
+B) Page-by-page polish (no content changes):
+- Landing, Services, About, Designed For, Sample, Contact, AuthLogin, AuthSignUp, Dashboard:
+  - Improve spacing, hierarchy, card grids, CTA styles, and readability.
+  - Make forms look enterprise: input sizing, label alignment, error states.
+
+C) Dashboard visual upgrade:
+- Do NOT add new dashboard features.
+- Keep the current cards/sections exactly as they exist, but make it look like a premium SaaS account area:
+  - 2-column grid on desktop, 1-column on mobile
+  - consistent card headers, subtle dividers, aligned form fields
+  - better “empty state” visuals for PDFs/Invoices/Subscriptions
+
+D) Add logo support (frontend only):
+- Add a placeholder in Header for a logo image, but do not invent a new logo.
+- Implement it so the owner can drop a file later (e.g., /client/src/assets/meru-logo.png).
+- If no file exists, show existing brand text as fallback without breaking build.
+
+DELIVERABLE:
+1) Implement the visual redesign now.
+2) Provide a concise “Change Report” listing only:
+   - Files modified
+   - What was improved (1-2 lines per file)
+3) Confirm explicitly:
+   - “Backend untouched”
+   - “No new pages/routes”
+   - “No copy/pricing/service changes”
+4) Run and confirm all routes still render.
+
+START NOW. Do not ask questions. Do not do extra work beyond this scope.

@@ -1,0 +1,126 @@
+IMPORTANT — FOLLOW EXACTLY (NO EXTRA CHANGES)
+Work only on FRONTEND pages and minimal server stubs if strictly necessary. Do NOT touch LBIA logic, decision engine, compliance engine, PDFs generation logic, pricing, services routing, or database schema. Do NOT add payments/Stripe. Do NOT invent new flows beyond what is listed. If something requires backend later, create a clear placeholder UI and a simple local dummy data structure.
+
+GOAL (PHASE 1 ONLY)
+Make the logged-in user area look enterprise/professional:
+- Account dashboard
+- Profile + Company details (editable forms)
+- Billing (placeholder)
+- Reports library (list + download links placeholder)
+- Security (change password + password reset link)
+Also ensure Login/Signup pages look equally professional (layout, copy, links).
+
+PAGES TO CREATE/UPDATE
+1) client/src/pages/AuthLogin.tsx
+2) client/src/pages/AuthSignUp.tsx
+3) Create: client/src/pages/MyAccount.tsx
+4) Create: client/src/pages/AccountProfile.tsx
+5) Create: client/src/pages/AccountCompany.tsx
+6) Create: client/src/pages/AccountReports.tsx
+7) Create: client/src/pages/AccountBilling.tsx
+8) Create: client/src/pages/AccountSecurity.tsx
+
+ROUTES (update client/src/App.tsx)
+- /account              -> MyAccount (dashboard)
+- /account/profile      -> AccountProfile
+- /account/company      -> AccountCompany
+- /account/reports      -> AccountReports
+- /account/billing      -> AccountBilling
+- /account/security     -> AccountSecurity
+
+NAVIGATION RULES
+- Header: for logged-in users show "My Account" and "Log Out"
+- Header: for guests show "Sign Up" and "Log In"
+- MyAccount and all /account/* pages should have a left sidebar menu:
+  Dashboard
+  Profile
+  Company
+  Reports
+  Billing
+  Security
+
+AUTH ASSUMPTION (NO BACKEND CHANGES)
+Assume we already have a way to know if user is logged in.
+If current project has a helper/hook for auth state, use it.
+If not, implement a TEMP frontend-only auth state using localStorage key "meru_demo_logged_in" (true/false) ONLY for UI gating.
+- On successful “Login” button click: set meru_demo_logged_in=true and route to /account
+- On “Log Out”: set false and route to /
+This is TEMP until we wire real Supabase auth later.
+
+ACCOUNT UI REQUIREMENTS
+A) Dashboard (/account)
+- Welcome header + quick cards:
+  “Start New Analysis” (button: goes to /services)
+  “View Reports” (button: goes to /account/reports)
+  “Update Company Profile” (button: goes to /account/company)
+- Show a “Status” card:
+  Plan: “Starter (demo)”
+  Last login: placeholder
+  Data retention: placeholder
+
+B) Profile (/account/profile)
+- Form fields:
+  Full name
+  Email (read-only)
+  Phone
+  Role/Title
+  Country
+- Save button (no real backend; just store in localStorage “meru_profile” JSON)
+
+C) Company (/account/company)
+- Form fields:
+  Company name
+  Website
+  Address line 1, Address line 2
+  City, State/Province, ZIP/Postal
+  Country
+  Industry (dropdown: Importer/Exporter, Freight Forwarder/NVOCC, Project Cargo/EPC, Other)
+  Primary lanes (text)
+- Save button -> localStorage “meru_company” JSON
+
+D) Reports (/account/reports)
+- Table/list:
+  Date | Service | Reference ID | Status | Actions
+- Provide 3 demo rows with realistic-looking IDs.
+- “Download PDF” button should open placeholder link "#" and show tooltip “Coming soon”.
+- “View” button routes to /sample for now.
+
+E) Billing (/account/billing)
+- Show placeholder:
+  “Billing will be enabled at launch.”
+  Fields shown but disabled:
+   Card brand/last4, billing email, billing address
+  Button: “Update billing (coming soon)”
+
+F) Security (/account/security)
+- Section 1: Change password (fields: current, new, confirm) -> placeholder save (shows toast “Saved (demo)”)
+- Section 2: Forgot password
+  Link/button: “Send password reset email” -> shows toast “Reset flow enabled at launch”
+- Section 3: Sessions (placeholder list: current device)
+
+LOGIN/SIGNUP UI REQUIREMENTS
+- Must look clean and professional, consistent styling with the rest of site.
+- Login:
+  Email, Password
+  Button: Log In
+  Link: “Forgot password?” -> routes to /account/security
+  Link: “Don’t have an account? Sign up” -> /auth/signup
+- Signup:
+  Full name, Email, Password, Confirm
+  Button: Create account
+  Link: “Already have an account? Log in” -> /auth/login
+- Add small trust note under forms:
+  “Decision intelligence, not legal advice.”
+
+STYLING
+- Use existing site styles (client/src/styles.css).
+- Keep it consistent, no new design system.
+- Responsive: sidebar collapses to top tabs on mobile.
+
+DELIVERABLE
+After changes, respond with:
+1) Files created/modified
+2) Routes confirmed
+3) Note: “Admin panel NOT implemented in this phase.”
+
+BEGIN NOW.

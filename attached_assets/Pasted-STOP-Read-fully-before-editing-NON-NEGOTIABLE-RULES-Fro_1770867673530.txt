@@ -1,0 +1,107 @@
+STOP. Read fully before editing.
+
+NON-NEGOTIABLE RULES
+- Frontend-only changes (client/). DO NOT modify server/, shared/, database, or API routes.
+- Do not invent new services or new prices. Use existing service pages/routes already created.
+- Do not output raw JSON to the user UI anywhere.
+- Keep layout consistent with current design system; no new libraries.
+
+GOAL
+Fix the entire Services → Details → Start Request → Correct Form → Submit → Success/PDF flow so it matches the intended UX and does not mix forms.
+
+A) SERVICES PAGE UX + BUTTON LOGIC
+1) /services must show each top-level service as a clean card summary:
+   - Title + 2–3 sentence “what you get” + price label (use whatever the project currently has; do not change prices)
+   - Buttons:
+     a) "View details" -> navigates to the corresponding detailed page for that service (NOT login)
+     b) "Start request" -> if user not logged in, redirect to /auth/login then return back to the service request page; if logged in, take user directly to that service request form page.
+
+2) Add a clear Back button on every service detail/request page:
+   - “← Back to Services” (top-left under header)
+   - Also keep Home via logo.
+
+B) CUSTOMS COMPLIANCE SELECTION (checkbox flow)
+Current issue: customs shows 5 separate buttons; it must be selection + Start request.
+Implement this behavior:
+1) /services/customs (or wherever the customs group is shown) must display a checklist:
+   - Up to 5 HS Codes – $79
+   - 6–20 HS Codes – $129
+   - Bulk (Excel up to 250 HS Codes) – $199
+   - International Trade Document – $149
+     - Letter of Credit (L/C) – $149 (nested under International Trade Document)
+2) User selects ONE option (radio style, not multiple). Show selected price summary.
+3) Only ONE primary CTA button: "Start request"
+   - If not logged in -> login then return and keep selection
+   - If logged in -> route to the correct request page based on selection:
+     - upto-5 -> /services/customs/upto-5
+     - 6-20 -> /services/customs/6-20
+     - bulk-250 -> /services/customs/bulk-250
+     - trade-document -> /services/customs/trade-document
+     - letter-of-credit -> /services/customs/letter-of-credit
+4) Remove the old “each option is a button that routes immediately” behavior.
+
+C) FIX WRONG FORMS (critical)
+Problem: Logistics Decision Brief is showing the HS customs form.
+Fix routing + page composition so:
+1) Logistics Decision Brief page shows ONLY logistics intake fields (not HS-only customs fields).
+2) Combined (Logistics + Customs) shows BOTH sections:
+   - Logistics intake section (same as Logistics Decision Brief)
+   - Customs section with HS items (same structure rules as below)
+   - A toggle/checkbox “Include Customs Compliance in this report” should be ON by default for Combined.
+3) Customs-only pages show ONLY customs-related fields; no dimensions/pallets.
+
+D) CUSTOMS 6–20 FORM (dynamic list)
+Rebuild /services/customs/6-20 form:
+- Render HS line items vertically (NOT side-by-side).
+- Each HS item must have:
+  - HS Code (format hint: 0000.00.00 or 000.000.000 accepted)
+  - Product Description
+  - Country of Origin
+  - Additional Notes (optional)
+- Start with 1 item.
+- Add button: “Add another HS code” until max 20.
+- Add remove button per item (except when only 1 remains).
+- Show a counter “X / 20”.
+
+E) CUSTOMS UP TO 5 FORM
+Same as above but max 5, and label accordingly.
+
+F) BULK 250 FORM (Excel upload)
+For /services/customs/bulk-250:
+- Provide “Download Excel Template” (a local static file in client/public/templates/)
+- Template columns:
+  hs_code | product_description | country_of_origin | additional_notes
+- Upload .xlsx, parse rows into an array, validate required fields, enforce max 250 rows.
+- Show preview table (first 15 rows) and show row-level validation errors.
+- On submit, send payload from parsed rows.
+
+G) INTERNATIONAL TRADE DOCUMENT + LETTER OF CREDIT
+For /services/customs/trade-document and /services/customs/letter-of-credit:
+- Replace placeholder-only pages with real field groups (still frontend-only; no backend logic yet).
+- On submit: show a professional success state with “Draft request submitted” and a “Download PDF” button placeholder (do NOT show JSON).
+- Keep fields minimal-but-professional; avoid over-engineering.
+
+H) SUBMISSION UX (frontend-only)
+- After submit on any request page, show:
+  - success banner
+  - a primary button “Download PDF” (wire to existing pattern if already present; if API is not wired here yet, keep button disabled with tooltip “Available after processing”)
+  - a secondary “Back to Dashboard”
+
+I) NAVIGATION QUALITY
+- Ensure all request pages have a reliable way back:
+  - Back to Services
+  - Dashboard (if authed)
+  - Home via logo
+
+DELIVERABLE
+After implementation, respond with:
+1) Exact files changed
+2) Confirmed routes and flows:
+   - Services -> View details -> Back
+   - Services -> Start request -> login -> returns -> correct form
+   - Customs selection -> Start request -> correct form
+   - Logistics form is not HS-only
+   - Combined form shows both sections
+   - 6–20 dynamic HS list works
+   - Bulk upload + template works
+3) No backend files modified

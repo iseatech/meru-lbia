@@ -1,0 +1,83 @@
+STRICT EXECUTION MODE – NO AUTONOMOUS DECISIONS
+
+You must follow these rules strictly:
+- Do NOT create new services.
+- Do NOT add pricing unless explicitly listed below.
+- Do NOT invent sections.
+- Do NOT redesign layout.
+- Do NOT refactor unrelated code.
+- Do ONLY what is explicitly requested.
+- After finishing, list files modified and confirm no other changes were made.
+
+========================================
+TASK: CLEAN SERVICE STRUCTURE + REMOVE ERRORS
+========================================
+
+PART 1 — REMOVE WRONG SERVICE
+
+1) Delete completely:
+   client/src/pages/Service4.tsx
+
+2) Remove route:
+   Remove /services/service-4 from client/src/App.tsx
+
+3) Remove any reference in:
+   - client/src/pages/Services.tsx
+   - Entire client folder (search for "Service4", "service-4")
+
+4) Confirm navigating to /services/service-4 now returns 404.
+
+----------------------------------------
+
+PART 2 — ENSURE SERVICE STRUCTURE MATCHES EXACTLY THIS:
+
+Service Type (when user logged in)
+
+1) Logistics Decision Brief – $149
+
+2) Customs Compliance (dropdown submenu)
+   - Up to 5 HS codes – $79
+   - 6–20 HS codes – $129
+   - Bulk (Excel up to 250 HS codes) – $199
+   - International Trade Document – $149
+        - Letter of Credit (L/C) (nested under International Trade Document)
+
+3) Combined: Logistics + Customs Compliance – $299
+
+DO NOT add any other service.
+
+----------------------------------------
+
+PART 3 — SERVICES PAGE BEHAVIOR
+
+The /services page must:
+
+- Display ONLY the 3 main service groups listed above.
+- Customs Compliance must visually indicate it has subservices.
+- International Trade Document must visually indicate it has a nested submenu (Letter of Credit).
+- No pricing changes.
+- No additional content.
+- No additional cards.
+- No assumptions.
+
+----------------------------------------
+
+PART 4 — DO NOT TOUCH:
+
+- Landing page
+- About
+- Contact
+- Designed-for
+- Sample
+- Auth pages
+- Layout
+- Styling (unless required to remove Service-4 reference)
+
+----------------------------------------
+
+FINAL CONFIRMATION REQUIRED:
+
+Return:
+- Files deleted
+- Files modified
+- Confirmation that no other logic, pricing, layout, or services were altered

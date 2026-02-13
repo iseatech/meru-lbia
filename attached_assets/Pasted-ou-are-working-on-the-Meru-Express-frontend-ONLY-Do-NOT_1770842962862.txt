@@ -1,0 +1,56 @@
+ou are working on the Meru Express frontend ONLY. Do NOT modify any backend files, server routes, database, authentication logic, APIs, or business logic. No new backend endpoints. No pricing changes. No new service definitions. Only improve UI/UX (CSS + minimal visual JS) inside /client. Preserve existing page structure and navigation routes.
+
+Goal: Make the site look like a modern enterprise SaaS (Stripe/Flexport style): clean, premium, professional, responsive, SEO-ready.
+
+DELIVERABLES (frontend only):
+1) Global Design System:
+   - Update client/src/styles.css to a consistent design system using CSS variables:
+     --bg, --bg2, --card, --border, --text, --muted, --primary, --primary2, --danger, --shadow
+   - Add modern typography (Inter) via index.html (Google Fonts).
+   - Buttons: primary/secondary/ghost, hover/active/focus states, accessible focus ring.
+   - Cards: consistent padding, radius, border, subtle shadow.
+   - Forms: inputs/selects/textarea styling (focus, error state).
+   - Layout: max-width container, good spacing and section rhythm.
+
+2) Header/Nav improvements (fix spacing issue):
+   - Make header compact and balanced: logo left, nav center-left, auth buttons right.
+   - Reduce excessive left/right gaps. Keep consistent spacing on desktop and mobile.
+   - Mobile hamburger remains functional and looks polished.
+
+3) Add a Meru Express logo placeholder (no external images required):
+   - In Header component, add a clickable brand block:
+     - A small square badge with “ME”
+     - Text “Meru Express” + small subtitle “Logistics Decision Intelligence”
+   - Clicking the brand returns to "/".
+
+4) Landing page polish:
+   - Improve hero hierarchy, add subtle gradient background + 1 minimal decorative “logistics-tech” motif using pure CSS (no images).
+   - Make primary CTA buttons consistent style (same color family) and hover transitions.
+   - Ensure “View Sample PDF” opens in a new tab if present on this frontend.
+
+5) Services page UI:
+   - Improve service group layout + submenu readability.
+   - Do NOT invent pricing. Keep whatever is currently displayed; just improve visual layout.
+
+6) Dashboard UI:
+   - Keep it account-management only (already). Improve card layout, spacing, headings, empty-states, and action button styling.
+   - Add a left-side mini sidebar only if it does NOT change routes/logic (optional), otherwise keep grid but make it premium.
+
+7) SEO (frontend):
+   - Ensure each page sets title/description/OG tags using existing SEO hook or simple per-page metadata component.
+   - Add Organization JSON-LD on landing page (name, url placeholder https://meruexpress.com, sameAs placeholders for LinkedIn/X/FB/IG).
+   - Add canonical link tags.
+
+8) Minimal visual JS (optional):
+   - Smooth scroll for in-page anchors.
+   - Active section highlight on scroll (only if simple and safe).
+   - No tracking scripts.
+
+Rules:
+- No backend edits.
+- No API calls changed.
+- No auth logic changes.
+- Keep code clean and minimal.
+- Confirm exactly which frontend files were modified.
+
+Proceed now and output a short summary of files changed and what was improved.

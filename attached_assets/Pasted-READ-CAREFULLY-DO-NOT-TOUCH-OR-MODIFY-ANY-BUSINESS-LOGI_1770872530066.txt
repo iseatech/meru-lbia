@@ -1,0 +1,65 @@
+READ CAREFULLY. DO NOT TOUCH OR MODIFY ANY BUSINESS LOGIC RELATED TO: LBIA v3 engine, compliance engine, intelligence engine, PDF generation content, pricing logic, or existing customer-facing forms. This task is ADMIN PANEL ONLY.
+
+Goal: Build a complete Admin Panel (like a lightweight WordPress backend) for Meru Express to manage users, roles, trade intelligence entries (trade.gov DB), compliance rulesets, and PDF verification records.
+
+Hard rules:
+1) Keep existing public site + user dashboard working exactly as-is.
+2) Admin Panel must be new pages/routes under /admin/*.
+3) Admin routes and endpoints must be protected: auth + admin role. If admin role system already exists, reuse it. If not, create minimal admin check using meru_user_roles.
+4) No mock/fake pricing or new business copy. Keep admin UI content functional and neutral.
+5) Do not add QA tests, do not add new unrelated features.
+
+A) FRONTEND (React) — create these pages:
+- /admin (AdminDashboard)
+- /admin/users (UsersAdmin)
+- /admin/roles (RolesAdmin)
+- /admin/intelligence (TradeGovAdmin)
+- /admin/compliance (ComplianceAdmin)
+- /admin/verifications (VerificationsAdmin)
+- /admin/system (SystemAdmin)
+
+Each page must:
+- Use a shared AdminLayout with left sidebar menu + top header.
+- Show clean tables, filters, and minimal forms (create/edit/deactivate where applicable).
+- Include a clear “Back to Dashboard” and consistent breadcrumbs.
+- Include “Log out” link.
+
+Access gating:
+- If not logged in → redirect to /auth/login
+- If logged in but not admin → redirect to /dashboard with a small message “Admin access required”.
+
+Header link:
+- Add “Admin” link in main header ONLY when user is admin.
+- If admin detection is not wired yet in frontend, add temporary isAdmin flag = false with a TODO note, but still keep /admin routes working for direct navigation during development.
+
+B) BACKEND (Express) — admin-only endpoints (minimal, stable):
+Create or extend server/admin.ts and server/routes.ts to include:
+- GET /admin/api/users (list users basic fields: id, email, full_name, created_at, last_sign_in)
+- POST /admin/api/users/:id/role (set role)
+- GET /admin/api/intelligence/tradegov/list (already exists) — ensure it works with admin auth
+- POST /admin/api/intelligence/tradegov/ingest (already exists) — ensure it works with admin auth
+- POST /admin/api/intelligence/tradegov/deactivate/:id (already exists) — ensure it works with admin auth
+- GET /admin/api/compliance/rulesets (list rulesets)
+- POST /admin/api/compliance/rulesets (create ruleset)
+- POST /admin/api/compliance/rulesets/:id/deactivate (deactivate)
+- GET /admin/api/verifications (list verification records with code, issued_at, service_type, revoked flag; DO NOT expose user PII)
+- POST /admin/api/verifications/:code/revoke (revoke)
+- GET /admin/api/system/health (returns api health + db connectivity)
+
+Security:
+- Rate limit admin endpoints (reasonable default).
+- Add an admin audit log entry for role changes, ingest/deactivate actions, verification revoke actions.
+
+C) DATABASE (Supabase)
+If any required table is missing, output ONE SQL script (not multiple) that creates:
+- meru_admin_audit_log (id, actor_user_id, action, entity_type, entity_id, created_at, metadata jsonb)
+And required indexes.
+RLS: only admin role can read/write this table.
+
+D) SPA ROUTING FALLBACK (important)
+If refreshing /admin/* returns 404, update server to serve client/index.html for unknown non-API GET routes. Must not affect /api/* or /meru/* endpoints.
+
+Deliverable:
+- Implement all files and wiring.
+- Provide a short “What changed” summary.
+- Provide the single SQL script ONLY if needed.

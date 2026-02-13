@@ -1,0 +1,84 @@
+STRICT EXECUTION MODE – ARCHITECT CONTROLLED.
+DO NOT ADD FEATURES.
+DO NOT MODIFY ANYTHING NOT EXPLICITLY REQUESTED.
+DO NOT ADD PRICING, UI SECTIONS, OR LOGIC THAT IS NOT IN THIS INSTRUCTION.
+ONLY APPLY EXACT CHANGES BELOW.
+
+========================================
+PART 1 — FIX HEADER LAYOUT (MENU SPACING)
+========================================
+
+ISSUE:
+The header navigation has excessive horizontal spacing between:
+- Logo (left)
+- Navigation links (center)
+- Sign Up / Log In buttons (right)
+
+GOAL:
+Professional, compact, balanced layout.
+
+TASKS:
+1) Adjust header container layout using proper flex alignment.
+2) Ensure:
+   - Logo aligned left
+   - Nav links centered or slightly right of center
+   - Auth buttons grouped tightly on the right
+3) Reduce unnecessary padding and margin.
+4) Maintain responsive behavior.
+5) Do NOT redesign colors, typography, branding, or add new elements.
+
+========================================
+PART 2 — RESTRUCTURE CLIENT DASHBOARD
+========================================
+
+GOAL:
+Dashboard is ACCOUNT MANAGEMENT ONLY.
+It must NOT contain a service selector or pricing.
+
+REMOVE:
+- Entire "My Services" section that allows selecting services.
+- Any dropdown, submenu, or pricing shown in Dashboard.
+- Any logic that allows starting a new service inside Dashboard.
+
+REPLACE WITH:
+
+SECTION TITLE:
+"My Subscriptions / Contracted Services"
+
+This section must:
+- Be READ-ONLY.
+- Show placeholder text if no backend:
+  "No active subscriptions yet."
+- Include a button labeled:
+  "Start a New Request"
+  This button must link to: /services
+
+Dashboard must contain ONLY:
+
+1) Profile (editable)
+2) Company (editable)
+3) Billing / invoices
+4) My PDFs / downloads
+5) Payment methods
+6) Account settings / password reset
+7) My Subscriptions / Contracted Services (read-only)
+
+DO NOT:
+- Add pricing
+- Add new service groups
+- Add backend logic
+- Add assumptions
+
+========================================
+RETURN FORMAT
+========================================
+
+After implementation, return:
+
+1) Files modified
+2) Confirmation that:
+   - Header spacing is corrected
+   - Service selector is fully removed from Dashboard
+   - Dashboard is now account-management only
+   - “Start a New Request” links to /services
+3) Confirmation that NO other files or logic were modified

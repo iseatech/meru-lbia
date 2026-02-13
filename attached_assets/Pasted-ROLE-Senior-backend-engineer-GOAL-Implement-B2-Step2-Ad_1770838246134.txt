@@ -1,0 +1,45 @@
+ROLE: Senior backend engineer.
+GOAL: Implement B2-Step2 “Admin audit & control” for trade.gov intelligence (DB-first) WITHOUT touching any frontend, pricing, auth flows, decision engine behavior, or existing routes except adding new admin-only endpoints.
+
+NON-NEGOTIABLE RULES:
+- Do not invent UI, do not modify client/ files.
+- Do not change existing endpoints behavior.
+- Only add new server endpoints + minimal shared types if needed.
+- Follow existing admin security: must require authenticated + admin role + (if present in codebase) admin-2FA gate logic used elsewhere.
+- Keep code changes small, explicit, and testable. No refactors.
+
+REQUIREMENTS:
+1) Add admin-only endpoints for tradegov intelligence:
+   A. GET /admin/intelligence/tradegov/list
+      - Query params: country (optional), limit (optional, default 50), offset (optional, default 0)
+      - Returns newest first by effective_date desc then created_at desc
+      - If country provided, match by country_code OR country_name case-insensitive.
+      - Response: { ok:true, items:[{ id, source_id, title, publisher, url, country_code, country_name, risk_level, effective_date, tags, created_at, is_active }], total }
+
+   B. GET /admin/intelligence/tradegov/entry/:id
+      - Returns full entry with arrays: barriers, regulatory_flags, sector_insights, last_updated, tags, region, coverage, effective_date, plus source metadata.
+      - If not found, 404 { ok:false, message:"not_found" }
+
+   C. POST /admin/intelligence/tradegov/deactivate/:id
+      - Soft-deactivate (do NOT delete). Add column is_active boolean default true if missing.
+      - Sets is_active=false, returns { ok:true, id }
+      - Ensure loaders ignore inactive entries by default (but do not break any existing engine; only adjust DB loader to filter is_active=true).
+
+2) Database compatibility:
+   - If the schema currently lacks columns: effective_date, tags, region, coverage, is_active, add safe migrations in a new server-side SQL migration string (or guarded ALTER TABLE calls executed manually output in console logs). Do NOT auto-run destructive migrations.
+   - Keep runtime safe: if column missing, fallback gracefully rather than crashing.
+
+3) Update intelligence DB loader (server/intelligence/*):
+   - When querying DB-first results, only pick is_active=true entries.
+   - Choose newest by effective_date desc, created_at desc.
+
+4) Tests:
+   - Add minimal supertest or node fetch tests (whichever the repo uses) to validate:
+     - list returns ok
+     - entry/:id returns ok for existing
+     - deactivate flips is_active
+   - If automated tests framework not present, add a simple node script in server/dev/ to hit endpoints and print results.
+
+OUTPUT:
+- Provide concise change summary: files modified/created, endpoints, and how to test with curl (3 commands).
+- Do not add any other work beyond this task.

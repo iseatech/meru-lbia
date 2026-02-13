@@ -1,0 +1,61 @@
+INSTRUCTIONS (STRICT)
+- Do NOT add new features, pages, prices, menus, or refactors.
+- Do NOT change existing LBIA logic, compliance logic, auth, admin, or document integrity.
+- Only implement B1 exactly: render the already-stored intelligence_result_json into HTML/PDF outputs with clean gating.
+- If you touch a file, keep the diff minimal and localized.
+- After changes, report: files changed + exact routes impacted. No QA, no tests.
+
+GOAL (B1)
+Expose “Trade & Country Intelligence” section in the decision report, using the intelligence_result_json already stored in meru_decision_briefs.
+- Show in HTML (briefTemplate) AND PDF output.
+- Must be professional, concise, and strictly factual.
+- Must NOT contain hedging or banned “system language”.
+- Must not leak PII.
+
+DATA SOURCE
+- The POST /meru/decision-briefs already stores intelligence_result_json when payload includes country_of_origin.
+- The PDF route /meru/decision-briefs/:id/pdf already fetches the brief; use the stored intelligence_result_json from DB.
+- If intelligence_result_json is null/absent: do not render the section.
+
+SECTION CONTENT (STRUCTURE)
+Title: “Trade & Country Intelligence”
+Subtitle: “Signals derived from trade policy and regulatory context (trade.gov-ready).”
+
+Render fields if present in intelligence_result_json (do not invent):
+- country_risk_level (LOW/MEDIUM/HIGH)
+- trade_barriers[] (each: type, summary, source_label)
+- regulatory_flags[] (each: agency, flag, action_required)
+- sector_insights[] (each: sector, note)
+- last_updated (date string)
+- sources[] (labels only; no external URLs required)
+
+GATING RULES
+- If service is LOGISTICS_ONLY and intelligence exists: show only country_risk_level + regulatory_flags (no trade_barriers unless present).
+- If service is COMPLIANCE_ONLY and intelligence exists: show trade_barriers + regulatory_flags + last_updated + sources.
+- If COMBINED: show all available items.
+- If arrays are empty/missing, omit that sub-block entirely.
+
+HTML IMPLEMENTATION
+- Edit server/meru/briefTemplate.ts:
+  - Add helper renderIntelligenceSection(intel, serviceMode) returning HTML.
+  - Insert it before the Legal & Regulatory Advisory Notice box (disclaimer stays last, boxed).
+  - Use escapeHtml on all text fields.
+
+PDF IMPLEMENTATION
+- Edit server/routes.ts inside GET /meru/decision-briefs/:id/pdf:
+  - After the main report body and before the boxed Legal disclaimer (if present in PDF template flow), add a compact “Trade & Country Intelligence” block.
+  - Keep layout clean: title, then bullet-style lines.
+  - Do not add page breaks unless needed.
+  - If not enough space on page, continue on next page.
+  - Do NOT alter the verification barcode/QR placement logic.
+
+DB MODEL
+- Do NOT modify shared/models/auth.ts schema (assume intelligence_result_json column exists already).
+- If the column is missing at runtime, fail gracefully: skip intelligence rendering (no crash).
+
+DELIVERABLE
+- Provide a short summary:
+  - Files changed
+  - What section was added
+  - Where it renders (HTML and PDF)
+  - Confirm no other behavior changed

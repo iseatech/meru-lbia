@@ -1,0 +1,58 @@
+TASK: Rework /services into a Sales Page (marketing) + keep detailed pages for each service.
+Frontend-only. Do NOT touch backend, server/, shared/, DB, auth, routes.
+
+NON-NEGOTIABLE:
+- Keep existing routes. Do not create new routes.
+- Keep pricing exactly as defined (149 / 79 / 129 / 199 / 149 / 149 / 299).
+- Do not invent real company names, logos, or false claims.
+- /services must become a high-converting sales page, not a selector list.
+
+GOAL:
+/Services should explain what each service is, who it is for, what the client receives, and show example scenarios.
+Each service card must have two CTAs:
+1) “View details” -> link to the corresponding detailed route
+2) “Start request” -> link to /dashboard (for now)
+
+IMPLEMENTATION:
+A) Update client/src/pages/Services.tsx:
+- Page hero: “Services & Pricing” + strong subheadline (executive-grade, verified PDFs, barcode verification, SHA-256 integrity).
+- Create 3 main sections/cards:
+  1) Logistics Decision Brief ($149)
+     - What it is (2–3 lines)
+     - What you get (bullets: decision summary, route options, cost drivers, risk flags, recommended mode, documentation checklist, assumptions)
+     - Best for (3 bullets)
+     - Mini “Example” (short scenario)
+     - Buttons:
+        - View details -> /services/logistics-decision-brief
+        - Start request -> /dashboard
+  2) Customs Compliance (group)
+     - What it is (2–3 lines)
+     - Subservices list with 1-line description each + price:
+        - Up to 5 HS Codes ($79) -> /services/customs/upto-5
+        - 6–20 HS Codes ($129) -> /services/customs/6-20
+        - Bulk up to 250 HS codes ($199) -> /services/customs/bulk-250
+        - International Trade Document ($149) -> /services/customs/trade-document
+        - Letter of Credit (L/C) ($149) nested under Trade Document -> /services/customs/letter-of-credit
+     - Add a small note: “We provide analytical guidance; final classification/filing remains the importer’s responsibility.” (professional disclaimer)
+     - Buttons:
+        - View details -> /services/customs/trade-document (main entry)
+        - Start request -> /dashboard
+  3) Combined: Logistics + Customs Compliance ($299)
+     - What it is (bundle)
+     - What you get (bullets)
+     - Example scenario
+     - Buttons:
+        - View details -> /services/combined
+        - Start request -> /dashboard
+
+B) Update styling if needed (client/src/styles.css):
+- Ensure /services looks premium: proper spacing, card hierarchy, subtle icons, CTA buttons consistent.
+- Remove any “checkout-looking” rows; keep it marketing style.
+
+C) Do NOT change the detailed service pages content yet, only ensure buttons link correctly.
+(We will expand each detailed service page with full cases/testimonials later.)
+
+DELIVERABLE:
+- List files changed
+- Confirm: “Frontend-only, no backend changes”
+- Confirm links tested: /services -> each detail route works.

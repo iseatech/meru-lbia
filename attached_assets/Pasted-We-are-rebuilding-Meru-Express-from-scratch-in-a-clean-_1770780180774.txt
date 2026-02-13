@@ -1,0 +1,122 @@
+We are rebuilding Meru Express from scratch in a clean new project.
+
+This is FRONTEND ONLY.
+Do NOT reuse any old files.
+Do NOT connect Supabase.
+Do NOT add authentication.
+Do NOT add Stripe.
+Do NOT add business logic yet.
+
+Build a clean, professional, production-ready static frontend structure with Express serving static pages.
+
+PROJECT STRUCTURE:
+
+/server
+  index.ts
+  routes.ts
+
+/client
+  /pages
+      landing.html
+      about.html
+      services.html
+      designed-for.html
+      sample.html
+      contact.html
+  /assets
+      styles.css
+      app.js
+
+REQUIREMENTS:
+
+1. Express must serve:
+   GET /
+   GET /about
+   GET /services
+   GET /designed-for
+   GET /sample
+   GET /contact
+
+2. All pages must share:
+   - Header with text logo: "Meru Express"
+   - Navigation menu:
+        About
+        Services & Pricing
+        Designed For
+        Sample
+        Contact
+   - Active link highlighting
+   - Footer:
+        © 2026 Meru Express LLC
+        Sitemap | Terms | Privacy | Cookies
+
+3. Styling:
+   - Clean white base
+   - Modern professional blue/teal accent
+   - Soft shadows
+   - Smooth hover transitions
+   - Good spacing
+   - Responsive (mobile / tablet / desktop)
+   - No inline CSS
+   - No inline JS except script include
+
+4. HOME ( / )
+Hero:
+"Logistics Decision Intelligence — Not Quotes"
+Subtext:
+"Executive-grade logistics and trade intelligence for importers, freight forwarders and project cargo operators."
+Primary CTA:
+"Explore Services"
+
+5. ABOUT
+Sections:
+- Who we are
+- Our mission
+- Our methodology
+- Why decision intelligence matters
+
+6. SERVICES
+Show 4 categories:
+- Logistics Decision Brief
+- U.S. Customs Compliance
+- Combined Intelligence
+- Trade Finance Advisory
+
+Each with short professional description and placeholder pricing.
+
+7. DESIGNED FOR
+Three clean columns:
+- Importers & Exporters
+- Freight Forwarders
+- Project Cargo / Industrial Operators
+
+8. SAMPLE
+Explain what a Meru Decision Brief includes.
+Add a button placeholder:
+"View Sample PDF"
+
+9. CONTACT
+Contact form (non-functional):
+- Name
+- Email
+- Company
+- Message
+Submit button only.
+
+Do NOT:
+- Add authentication
+- Add backend logic
+- Add database
+- Add APIs
+- Add business engine
+
+When complete:
+1. Confirm all routes working.
+2. Confirm responsive layout.
+3. Show file tree.
+4. Confirm server running clean.
+5. Do not add extra explanations.
+
+Clean, structured, production-quality layout.
+No hacks.
+No debug code.

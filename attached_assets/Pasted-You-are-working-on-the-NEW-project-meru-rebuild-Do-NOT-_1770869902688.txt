@@ -1,0 +1,39 @@
+You are working on the NEW project (meru-rebuild). Do NOT touch backend code, DB, Supabase, auth, routes, pricing logic, or any business logic. Frontend-only changes.
+
+Goal (fix today, no scope creep):
+1) The Logistics Decision Brief page must show the REAL logistics intake form (POL/POD + Incoterm + Control Level + Mode + Cargo Nature + Shipment Type optional + Units/Weight/CBM + optional Packages lines + Reference). Right now it incorrectly shows the HS Customs form.
+2) The Combined (Logistics + Customs) page must include BOTH: the same Logistics intake form (above) + the Customs HS section (the dynamic HS list that already exists). Right now it also shows the wrong form.
+
+Source of truth:
+Use my backup file: /mnt/data/Meru_LBIA_v3_and_Compliance_Code_Export.md
+Inside it, locate: "## FILE: `server/meru-app.html`"
+Copy the Logistics sections and their field names/structure from that file:
+- Shipment & Route: origin POL, destination POD, incoterm, control_level, mode, cargo_nature, shipment_type (optional / “Let Meru decide”), reference_number
+- Cargo Summary: total_units + unit_type, total_weight_kg, total_volume_cbm, dimensions (cm) fields
+- Packages (optional): multiple package lines with qty, weight, dims, notes, and add/remove controls
+DO NOT copy the compliance-only card into LogisticsDecisionBrief (that is customs product compliance, not logistics-only). Only include compliance/HS section on Combined page.
+
+Implementation requirements:
+A) Create a reusable React component: client/src/components/LogisticsIntakeForm.tsx (or similar) that renders the logistics form exactly aligned with the old meru-app.html fields and payload structure.
+B) Replace the current LogisticsDecisionBrief.tsx to use that LogisticsIntakeForm component and submit to the existing API exactly as the backend currently expects.
+C) Update Combined.tsx to render:
+   - LogisticsIntakeForm (same as logistics-only)
+   - Customs/HS section (existing dynamic list/toggle)
+   - On submit, send a combined payload that includes BOTH logistics fields and customs fields, matching the backend contract already implemented in this new project.
+D) Keep the UX consistent:
+   - Include the existing BackButton (“Back to Services”) on both pages
+   - Show a clear submit CTA and a success state with PDF download link (use the existing pattern already used on other service pages)
+E) Use existing styling in client/src/styles.css; do not introduce frameworks; no inline styles except if absolutely necessary.
+F) Do not invent new fields. Do not rename field keys. The backend expects specific keys—inspect server/routes.ts in THIS NEW project and align payload keys accordingly.
+
+Deliverable:
+- Only modify/create the minimum frontend files needed.
+- After changes, confirm:
+  1) /services/logistics-decision-brief shows the logistics form (POL/POD etc.) NOT HS form
+  2) /services/combined shows BOTH logistics + HS customs sections
+  3) Submissions work and return a PDF link without backend changes
+
+When done, reply with:
+- List of files changed
+- What exact payload keys you are sending for logistics-only and combined (just the key names, not secrets)
+- Confirmation that backend was untouched

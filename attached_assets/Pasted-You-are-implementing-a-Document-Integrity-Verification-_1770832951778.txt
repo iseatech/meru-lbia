@@ -1,0 +1,154 @@
+You are implementing a Document Integrity & Verification Layer (DIVL) for Meru-LBIA v3.
+
+STRICT EXECUTION RULES:
+	1.	Do not modify any existing business logic.
+	2.	Do not refactor or reorganize files.
+	3.	Do not modify authentication.
+	4.	Do not modify LBIA, compliance engine, intelligence engine, pricing, routes structure, or dashboard logic.
+	5.	Only implement what is explicitly described below.
+	6.	Do not add extra features.
+	7.	Do not change naming conventions.
+	8.	Do not assume requirements beyond this instruction.
+	9.	If something already exists, reuse it without altering behavior.
+	10.	Keep implementation modular and isolated.
+
+OBJECTIVE
+
+When a final PDF is generated, the system must:
+	1.	Generate a unique verification code.
+	2.	Store verification metadata in database.
+	3.	Embed verification metadata visibly in the PDF.
+	4.	Provide a public verification endpoint.
+	5.	Preserve all current PDF behavior and layout.
+
+STEP 1 — DATABASE
+
+Create a new table only if it does not exist:
+
+Table name: meru_document_verifications
+
+Columns:
+	•	id UUID primary key default gen_random_uuid()
+	•	brief_id UUID not null
+	•	user_id UUID not null
+	•	service_type TEXT not null
+	•	verification_code TEXT unique not null
+	•	pdf_sha256 TEXT not null
+	•	created_at TIMESTAMPTZ default now()
+	•	status TEXT default ‘valid’
+
+Add an index on verification_code.
+
+Do not modify any existing table.
+
+STEP 2 — VERIFICATION CODE GENERATION
+
+Create new file:
+
+server/security/documentIntegrity.ts
+
+Implement function:
+
+generateVerificationCode(input: {
+briefId: string
+userId: string
+serviceType: string
+})
+
+Format:
+
+MERU-YYYYMMDD-HHMMSS-XXXXXXXX
+
+Where XXXXXXXX is the first 8 uppercase characters of:
+
+SHA256(briefId + userId + timestamp + serviceType)
+
+Use UTC time.
+
+STEP 3 — PDF HASHING
+
+After final PDF buffer is generated:
+	1.	Compute SHA-256 hash of the PDF buffer.
+	2.	Store hash in pdf_sha256 field.
+
+If storage fails, PDF generation must still succeed.
+
+STEP 4 — BARCODE AND QR CODE
+
+Install and use lightweight libraries only if not already present:
+	•	A Code128 generator
+	•	A QR code generator
+
+Generate:
+
+QR URL format:
+https://meruexpress.com/verify/<verification_code>
+
+Embed into PDF:
+
+Top right corner:
+	•	Verification Code
+	•	Issued UTC timestamp
+
+Bottom area:
+	•	Code128 barcode
+	•	QR code
+
+Keep layout clean.
+Do not break existing formatting.
+Do not reposition existing LBIA sections.
+
+STEP 5 — PUBLIC VERIFICATION ENDPOINT
+
+Create route:
+
+GET /verify/:code
+
+Behavior:
+
+If verification_code not found:
+return { valid: false }
+
+If found and status === ‘valid’:
+return {
+valid: true,
+issued_at,
+service_type
+}
+
+Do not return user data.
+Do not expose sensitive information.
+
+STEP 6 — STATUS SUPPORT
+
+Status column must support:
+	•	valid
+	•	revoked
+
+No UI required now.
+
+STEP 7 — SAFETY REQUIREMENTS
+	•	Wrap new logic in try/catch.
+	•	Do not block PDF generation if verification insert fails.
+	•	Do not increase existing route timeouts.
+	•	Do not modify unrelated endpoints.
+
+TEST REQUIREMENTS
+	1.	Generate a brief.
+	2.	Confirm record inserted into meru_document_verifications.
+	3.	Confirm PDF displays:
+	•	Verification code
+	•	Timestamp
+	•	Barcode
+	•	QR code
+	4.	Test /verify/ returns valid true.
+
+DELIVERABLE
+
+When finished, respond with:
+	•	Files created
+	•	Files modified
+	•	Route added
+	•	Confirmation that no business logic was changed
+
+End of instruction.

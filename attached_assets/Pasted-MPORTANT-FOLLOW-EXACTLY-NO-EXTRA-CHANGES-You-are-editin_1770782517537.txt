@@ -1,0 +1,77 @@
+MPORTANT — FOLLOW EXACTLY (NO EXTRA CHANGES)
+You are editing the NEW clean project. Do NOT touch backend logic, auth, LBIA, Supabase, payments, or APIs. Do NOT add new pricing, new services, or new sections not listed below. Do NOT change CSS/JS styling beyond what is strictly needed for navigation. Do NOT refactor unrelated files. Do NOT invent text. If something is missing, create a placeholder page with “Coming soon”.
+
+GOAL (THIS TASK ONLY)
+Implement the Services menu + submenus exactly as specified, and create separate pages (routes) for each service/subservice. This is FRONTEND ONLY.
+
+MENU REQUIREMENTS (Services page content)
+Create/update client/src/pages/Services.tsx to show ONLY these service groups and their sub-options (as clickable items/cards/buttons). Keep it clean and simple.
+
+SERVICE GROUP 1 — Logistics Decision Brief
+- Logistics Decision Brief — $149
+Route: /services/logistics-decision-brief
+
+SERVICE GROUP 2 — Customs Compliance (USA/Canada/Mexico scope later, but UI labels now can say “U.S. Customs Compliance”)
+Submenu (must be visible under this group):
+- Up to 5 HS codes — $79
+  Route: /services/customs/upto-5
+- 6–20 HS codes — $129
+  Route: /services/customs/6-20
+- Bulk (Excel up to 250 HS codes) — $199
+  Route: /services/customs/bulk-250
+- International Trade Document — $149
+  Route: /services/customs/trade-document
+- Letter of Credit (L/C) — $149
+  Route: /services/customs/letter-of-credit
+
+SERVICE GROUP 3 — Combined Analysis
+- Combined (Logistics + Customs) — $199
+Route: /services/combined
+
+SERVICE GROUP 4 — (Already defined in user doc)
+- Service #4 — $299
+Route: /services/service-4
+
+NAVIGATION / HEADER
+- Ensure the main header navigation already in Header.tsx includes: About, Services & Pricing, Designed for, Sample, Contact, plus Sign Up and Log In buttons (already created). Do NOT change wording.
+- Make sure clicking “Services & Pricing” goes to /services.
+
+PAGES / ROUTES
+Create placeholder pages for each route above (if not already present) in client/src/pages/:
+- LogisticsDecisionBrief.tsx
+- CustomsUpTo5.tsx
+- Customs6To20.tsx
+- CustomsBulk250.tsx
+- CustomsTradeDocument.tsx
+- CustomsLetterOfCredit.tsx
+- Combined.tsx
+- Service4.tsx
+
+Each page MUST:
+- Have a clear title matching the submenu label
+- Have 1 short line: “Form will appear here (coming next).”
+- Have a button/link back to /services
+
+ROUTER
+Update client/src/App.tsx to register all routes exactly:
+/services
+/services/logistics-decision-brief
+/services/customs/upto-5
+/services/customs/6-20
+/services/customs/bulk-250
+/services/customs/trade-document
+/services/customs/letter-of-credit
+/services/combined
+/services/service-4
+
+DON’T BREAK ANYTHING
+- Keep existing pages working: /, /about, /designed-for, /sample, /contact, /auth/signup, /auth/login, 404.
+- Do not remove any files.
+
+DELIVERABLE
+After edits, reply with:
+1) List of files changed/created
+2) Confirm each route loads without errors
+3) Brief note: “No other changes made.”
+
+BEGIN WORK NOW.

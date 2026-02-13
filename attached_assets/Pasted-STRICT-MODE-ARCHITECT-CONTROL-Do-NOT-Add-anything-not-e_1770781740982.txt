@@ -1,0 +1,125 @@
+STRICT MODE – ARCHITECT CONTROL
+
+Do NOT:
+- Add anything not explicitly written
+- Create placeholder content
+- Insert pricing
+- Rename sections
+- Improve wording
+- Change structure
+- Add UI elements not listed
+- Add features not defined
+- Add extra text
+- Add assumptions
+
+If something is undefined:
+- Leave it empty
+- Insert // TODO
+- Or stop and report
+
+Implement ONLY what is written.
+
+--------------------------------------------------
+
+OBJECTIVE:
+Create a clean structural foundation for the new Meru Express frontend.
+No business logic.
+No pricing.
+No creative additions.
+No compliance.
+No LBIA engine.
+Only structural navigation and routing.
+
+--------------------------------------------------
+
+TECH STACK:
+React + Vite + TypeScript
+Simple CSS (no design creativity)
+No external UI libraries
+No shadcn
+No Tailwind
+Plain structured layout
+
+--------------------------------------------------
+
+CREATE THIS EXACT STRUCTURE:
+
+client/
+  index.html
+  src/
+    main.tsx
+    App.tsx
+    styles.css
+    components/
+      Header.tsx
+      Footer.tsx
+    pages/
+      Landing.tsx
+      About.tsx
+      Services.tsx
+      DesignedFor.tsx
+      Sample.tsx
+      Contact.tsx
+      AuthSignUp.tsx
+      AuthLogin.tsx
+      NotFound.tsx
+
+server/
+  index.ts
+  routes.ts
+
+--------------------------------------------------
+
+ROUTES REQUIRED:
+
+/                 → Landing
+/about            → About
+/services         → Services
+/designed-for     → DesignedFor
+/sample           → Sample
+/contact          → Contact
+/auth/signup      → SignUp
+/auth/login       → Login
+
+--------------------------------------------------
+
+HEADER MENU (EXACT ORDER):
+
+About
+Services & Pricing
+Designed For
+Sample
+Contact
+Sign Up (button style class only)
+Log In (button style class only)
+
+--------------------------------------------------
+
+IMPORTANT:
+
+- Services page must NOT contain pricing yet.
+- No submenus yet.
+- No forms yet.
+- No decision engine yet.
+- No compliance.
+- No authentication logic.
+- Just navigation pages with simple placeholder <h1> titles matching page names.
+- All pages must render correctly.
+- Mobile responsive basic layout only (flexbox).
+- No design creativity.
+
+--------------------------------------------------
+
+RETURN:
+
+1. File tree
+2. Files created
+3. Confirmation:
+   - No pricing added
+   - No extra sections added
+   - No additional logic implemented
+   - No assumptions made
+
+Do NOT summarize.
+Do NOT explain.
+Return only implementation report.

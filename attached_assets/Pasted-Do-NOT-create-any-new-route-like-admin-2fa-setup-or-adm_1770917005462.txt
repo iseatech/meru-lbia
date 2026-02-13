@@ -1,0 +1,45 @@
+Do NOT create any new route like /admin/2fa/setup or /admin/2fa/verify.
+
+Goal: Remove the dependency on /admin/2fa/* routes entirely, and keep admin 2FA inside the existing admin panel under /admin/system.
+
+Requirements:
+1) Update AdminPanelGate so it never redirects to /admin/2fa/setup or /admin/2fa/verify.
+   - If admin is missing 2FA setup OR needs 2FA verification, redirect to /admin/system instead.
+
+2) In the /admin/system page, add a section at the top called "Admin Security (2FA)" that handles:
+   - If 2FA is not enabled: show "Setup 2FA" UI (QR + recovery codes) using the existing backend endpoints already implemented.
+   - If 2FA is enabled but not verified for this session: show "Verify 2FA" UI (code input + recovery code option).
+   - If 2FA is enabled and verified: show "2FA Active" status.
+
+3) Reuse existing 2FA components/logic already in the codebase (do not re-implement backend).
+4) No backend changes. No auth changes. No role changes. Only frontend + gating changes.
+5) Ensure /admin and all admin pages remain isolated (no StandardLayout header/footer), same as now.
+
+Do NOT create new routes. Do NOT touch backend unless strictly necessary. Keep changes minimal and controlled.
+
+Goal: Add (1) admin back navigation and (2) real role assignment actions for team management.
+
+1) Admin Back Button
+- In client/src/layouts/AdminLayout.tsx add a clear back navigation control:
+  - “Back to Admin Home” -> /admin
+  - “Back to Site” -> /
+- It must be visible on every /admin* page (persistent in the admin layout).
+
+2) Users Role Management (real actions)
+- In /admin/users page:
+  - Ensure the users table lists: name, email, role, and status (if status exists).
+  - Add an action “Change Role” per user (modal).
+  - Roles allowed: admin, analyst, support, user.
+  - On save, call the existing admin role update endpoint if it already exists; if not, add the minimal frontend call + minimal backend endpoint ONLY if absolutely required.
+  - Persist roles in meru_user_roles (existing table). Do not create a new role system.
+
+3) Roles Page Improvement
+- In /admin/roles page:
+  - Show a simple roles matrix (role -> description/permissions text).
+  - Add a CTA button linking to /admin/users: “Assign roles in Users”.
+
+4) Non-regression
+- No changes to auth, PDF, LBIA logic, intelligence engine, or public pages.
+- Keep admin panel isolated layout (no standard header/footer).
+
+Return a summary of modified files and the exact admin URLs to test.

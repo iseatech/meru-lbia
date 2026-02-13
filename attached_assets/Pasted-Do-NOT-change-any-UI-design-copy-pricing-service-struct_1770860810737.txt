@@ -1,0 +1,49 @@
+Do NOT change any UI design, copy, pricing, service structure, or business-logic narrative text. Only complete the missing wiring “as production-normal”.
+
+Goal: End-to-end working SaaS flow:
+- Auth user can create a request (any service page)
+- A decision brief is persisted in Supabase with correct ownership (user_id)
+- User can see their history in Dashboard
+- User can open/download PDF for any of their briefs
+- All routes enforce access control properly (owner-only)
+- No hanging requests, clear JSON errors
+
+Backend requirements:
+1) Ensure server-side Supabase client is correctly configured from env vars. Fail fast with explicit error if missing.
+2) Implement a single auth verifier for API requests:
+   - Accept Authorization: Bearer <access_token>
+   - Verify via supabase.auth.getUser(token)
+   - Return {ok:false, step:"auth", message:"..."} on failure
+3) POST /api/briefs (auth required):
+   - Input: service_type + intake payload for that service
+   - Insert client/intake/package rows as applicable
+   - Insert meru_decision_briefs row with: user_id, service_type, mode, created_at, status
+   - Store any engine results JSON already supported (compliance/intelligence/etc) without changing logic
+   - Return {ok:true, brief_id}
+4) GET /api/my-briefs (auth required):
+   - Return last 50 briefs for this user: id, created_at, service_type, status, has_pdf (boolean if pdf can be generated)
+5) GET /api/briefs/:id (auth required):
+   - Owner-only: return full brief metadata + stored results JSON (no secrets)
+6) GET /meru/decision-briefs/:id/pdf:
+   - Owner-only access enforced
+   - Generate PDF using existing templates + include compliance/intelligence if present
+   - Keep document integrity verification (code + barcode + QR) as implemented
+7) Add a public verification endpoint (if not already): GET /verify/:code returns validity (no PII)
+
+Frontend requirements (normal wiring):
+8) On each service page, the main CTA must:
+   - If not logged in → redirect to /auth/login
+   - If logged in → submit to POST /api/briefs and on success open /meru/decision-briefs/<id>/pdf in a new tab
+9) Dashboard “My PDFs / Downloads”:
+   - Fetch /api/my-briefs
+   - Render a table/list with View PDF + View Details
+10) Add “Back” navigation:
+   - Service pages: back to /services
+   - Dashboard: back to home
+
+Security/robustness:
+11) Ensure every API route returns within 10 seconds; implement server-side timeouts with clear step labeling.
+12) Do not add QA tests. Do not add new pages. Do not change pricing/copy.
+
+Deliverable:
+- After changes, list EXACT files modified and EXACT routes added/updated.
