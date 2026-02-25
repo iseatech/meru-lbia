@@ -1,0 +1,10 @@
+node_modules
+
+# local secrets
+.env
+.env.*
+
+# backups / zips / mac cruft
+lbia_backup.zip
+__MACOSX/
+*.swp

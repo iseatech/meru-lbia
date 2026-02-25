@@ -1,12 +1,20 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import type { Server } from "http";
+
+import {
+  setupAuth,
+  registerAuthRoutes,
+  isAuthenticated as replitIsAuthenticated,
+} from "./replit_integrations/auth";
+
 import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { users, meruDecisionBriefs } from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
+
 import { registerAdminRoutes } from "./admin";
 import { runIntelligenceEngine } from "./intelligence/intelligence.engine";
+
 import {
   lookupVerification,
   generateVerificationCode,
@@ -17,20 +25,64 @@ import {
   generateBarcodePng,
   generateQrPng,
 } from "./security/documentIntegrity";
+
 import PDFDocument from "pdfkit";
 import { renderIntelligencePdf } from "./meru/briefTemplate";
+
+/**
+ * Codespaces-friendly auth strategy:
+ * - If REPLIT_* env vars exist => enable Replit OIDC auth (setupAuth + registerAuthRoutes)
+ * - Else => use simple session-based auth via /api/auth/register and /api/auth/login
+ */
+function shouldUseReplitAuth() {
+  return Boolean(process.env.REPLIT_CLIENT_ID && process.env.REPLIT_CLIENT_SECRET);
+}
+
+function localIsAuthenticated(req: any, res: any, next: any) {
+  // Session-based fallback (works in Codespaces if express-session is enabled in server/index.ts)
+  const s = req?.session;
+  if (s?.userId) {
+    // Normalize "req.user" to match the existing code paths
+    req.user = {
+      claims: {
+        sub: s.userId,
+        email: s.email || null,
+        first_name: s.firstName || null,
+        last_name: s.lastName || null,
+      },
+    };
+    return next();
+  }
+  return res.status(401).json({ message: "Authentication required." });
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  const useReplitAuth = shouldUseReplitAuth();
+
+  if (useReplitAuth) {
+    // Replit OIDC auth enabled only when env vars exist
+    await setupAuth(app);
+    registerAuthRoutes(app);
+  } else {
+    console.warn(
+      "[auth] Replit auth disabled (missing REPLIT_CLIENT_ID/REPLIT_CLIENT_SECRET). Using local session auth."
+    );
+  }
+
+  // Admin routes may depend on auth; keep them registered
+  // (Admin gating should block unauthenticated/non-admin users anyway)
   registerAdminRoutes(app);
 
-  app.post("/api/auth/register", async (req, res) => {
+  const isAuthenticated = useReplitAuth ? replitIsAuthenticated : localIsAuthenticated;
+
+  // --- Local email/password auth (session-based) ---
+  app.post("/api/auth/register", async (req: any, res) => {
     try {
       const { email, password, firstName, lastName } = req.body;
+
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required." });
       }
@@ -41,7 +93,10 @@ export async function registerRoutes(
         !/[a-z]/.test(password) ||
         (!/[0-9]/.test(password) && !/[^A-Za-z0-9]/.test(password))
       ) {
-        return res.status(400).json({ message: "Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number or special character." });
+        return res.status(400).json({
+          message:
+            "Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number or special character.",
+        });
       }
 
       const [existing] = await db.select().from(users).where(eq(users.email, email));
@@ -50,6 +105,7 @@ export async function registerRoutes(
       }
 
       const passwordHash = await bcrypt.hash(password, 12);
+
       const [user] = await db
         .insert(users)
         .values({
@@ -60,23 +116,30 @@ export async function registerRoutes(
         })
         .returning();
 
-      const sessionExpiry = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
-      (req as any).login(
-        { claims: { sub: user.id, email: user.email, first_name: user.firstName, last_name: user.lastName }, expires_at: sessionExpiry },
-        (err: any) => {
-          if (err) return res.status(500).json({ message: "Session creation failed." });
-          return res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName });
-        }
-      );
+      // Session login (Codespaces/local)
+      if (req.session) {
+        req.session.userId = user.id;
+        req.session.email = user.email;
+        req.session.firstName = user.firstName;
+        req.session.lastName = user.lastName;
+      }
+
+      return res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      });
     } catch (error) {
       console.error("Register error:", error);
-      res.status(500).json({ message: "Registration failed." });
+      return res.status(500).json({ message: "Registration failed." });
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", async (req: any, res) => {
     try {
       const { email, password } = req.body;
+
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required." });
       }
@@ -91,20 +154,52 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Invalid email or password." });
       }
 
-      const sessionExpiry = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
-      (req as any).login(
-        { claims: { sub: user.id, email: user.email, first_name: user.firstName, last_name: user.lastName }, expires_at: sessionExpiry },
-        (err: any) => {
-          if (err) return res.status(500).json({ message: "Session creation failed." });
-          return res.json({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName });
-        }
-      );
+      // Session login (Codespaces/local)
+      if (req.session) {
+        req.session.userId = user.id;
+        req.session.email = user.email;
+        req.session.firstName = user.firstName;
+        req.session.lastName = user.lastName;
+      }
+
+      return res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      });
     } catch (error) {
       console.error("Login error:", error);
-      res.status(500).json({ message: "Login failed." });
+      return res.status(500).json({ message: "Login failed." });
     }
   });
 
+  app.post("/api/auth/logout", (req: any, res) => {
+    try {
+      if (req.session) {
+        req.session.destroy(() => {});
+      }
+      return res.json({ ok: true });
+    } catch {
+      return res.json({ ok: true });
+    }
+  });
+
+  app.get("/api/auth/me", (req: any, res) => {
+    const s = req?.session;
+    if (!s?.userId) return res.json({ user: null });
+
+    return res.json({
+      user: {
+        id: s.userId,
+        email: s.email || null,
+        first_name: s.firstName || null,
+        last_name: s.lastName || null,
+      },
+    });
+  });
+
+  // --- Business endpoints ---
   app.post("/meru/decision-briefs", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || null;
@@ -123,23 +218,29 @@ export async function registerRoutes(
 
       let briefRecord: any;
       try {
-        [briefRecord] = await db.insert(meruDecisionBriefs).values({
-          userId,
-          serviceType,
-          status: "completed",
-          countryOfOrigin,
-          payload,
-          intelligenceResultJson: intelligence ? JSON.stringify(intelligence) : null,
-        }).returning();
-      } catch (dbErr: any) {
-        if (dbErr.message?.includes("intelligence_result_json")) {
-          [briefRecord] = await db.insert(meruDecisionBriefs).values({
+        [briefRecord] = await db
+          .insert(meruDecisionBriefs)
+          .values({
             userId,
             serviceType,
             status: "completed",
             countryOfOrigin,
             payload,
-          }).returning();
+            intelligenceResultJson: intelligence ? JSON.stringify(intelligence) : null,
+          })
+          .returning();
+      } catch (dbErr: any) {
+        if (dbErr.message?.includes("intelligence_result_json")) {
+          [briefRecord] = await db
+            .insert(meruDecisionBriefs)
+            .values({
+              userId,
+              serviceType,
+              status: "completed",
+              countryOfOrigin,
+              payload,
+            })
+            .returning();
         } else {
           throw dbErr;
         }
@@ -148,7 +249,7 @@ export async function registerRoutes(
       return res.json({ message: "Decision brief created", id: briefRecord?.id });
     } catch (error) {
       console.error("Decision brief error:", error);
-      res.status(500).json({ message: "Failed to create decision brief." });
+      return res.status(500).json({ message: "Failed to create decision brief." });
     }
   });
 
@@ -173,7 +274,7 @@ export async function registerRoutes(
       return res.json(briefs);
     } catch (error) {
       console.error("My briefs error:", error);
-      res.status(500).json({ message: "Failed to fetch briefs." });
+      return res.status(500).json({ message: "Failed to fetch briefs." });
     }
   });
 
@@ -185,7 +286,8 @@ export async function registerRoutes(
       const [brief] = await db
         .select()
         .from(meruDecisionBriefs)
-        .where(eq(meruDecisionBriefs.id, briefId));
+        // briefId might be string; drizzle can handle but keep as-is
+        .where(eq(meruDecisionBriefs.id, briefId as any));
 
       if (!brief) {
         return res.status(404).json({ message: "Decision brief not found." });
@@ -207,7 +309,7 @@ export async function registerRoutes(
           const generated = generateVerificationCode({
             briefId,
             userId,
-            serviceType: "logistics-decision-brief",
+            serviceType: brief.serviceType || "logistics-decision-brief",
           });
           verificationCode = generated.code;
           issuedTimestamp = generated.timestamp;
@@ -215,7 +317,7 @@ export async function registerRoutes(
           await storeVerificationRecord({
             briefId,
             userId,
-            serviceType: "logistics-decision-brief",
+            serviceType: brief.serviceType || "logistics-decision-brief",
             verificationCode,
             pdfSha256: "pending",
           });
@@ -273,7 +375,7 @@ export async function registerRoutes(
             width: contentWidth,
           });
           doc.moveDown(0.3);
-          doc.fontSize(14).fillColor("#333333").text("Logistics Decision Brief", marginLeft, doc.y, {
+          doc.fontSize(14).fillColor("#333333").text("Decision Brief", marginLeft, doc.y, {
             align: "center",
             width: contentWidth,
           });
@@ -291,34 +393,23 @@ export async function registerRoutes(
             doc.moveDown(0.8);
           };
 
-          addSection("Brief ID", briefId);
+          addSection("Brief ID", String(briefId));
 
-          if (brief.countryOfOrigin) {
-            addSection("Country of Origin", brief.countryOfOrigin);
-          }
-
-          if (payload.product_description) {
-            addSection("Product Description", payload.product_description);
-          }
-
-          if (payload.hs_code) {
-            addSection("HS Code", payload.hs_code);
-          }
-
-          if (payload.destination_country) {
-            addSection("Destination Country", payload.destination_country);
-          }
-
+          if (brief.countryOfOrigin) addSection("Country of Origin", String(brief.countryOfOrigin));
+          if (payload.product_description) addSection("Product Description", String(payload.product_description));
+          if (payload.hs_code) addSection("HS Code", String(payload.hs_code));
+          if (payload.destination_country) addSection("Destination Country", String(payload.destination_country));
           addSection("Generated At", issuedUtcDisplay);
 
           if (brief.intelligenceResultJson) {
             try {
-              const intel = JSON.parse(brief.intelligenceResultJson);
-              const serviceMode = (payload.service_type || "COMBINED").toUpperCase();
-              const mode = serviceMode === "LOGISTICS_ONLY" || serviceMode === "COMPLIANCE_ONLY" ? serviceMode : "COMBINED";
+              const intel = JSON.parse(String(brief.intelligenceResultJson));
+              const serviceMode = String(payload.service_type || "COMBINED").toUpperCase();
+              const mode =
+                serviceMode === "LOGISTICS_ONLY" || serviceMode === "COMPLIANCE_ONLY" ? serviceMode : "COMBINED";
               renderIntelligencePdf(doc, intel, mode as any, marginLeft, contentWidth);
             } catch {
-              // skip malformed intelligence
+              // ignore malformed intel JSON
             }
           }
 
@@ -326,13 +417,12 @@ export async function registerRoutes(
           doc.moveTo(marginLeft, bottomY).lineTo(pageWidth - marginRight, bottomY).strokeColor("#cccccc").stroke();
 
           const barcodeY = bottomY + 10;
-          let currentX = marginLeft;
 
           if (barcodePng) {
             try {
-              doc.image(barcodePng, currentX, barcodeY, { width: 200, height: 40 });
+              doc.image(barcodePng, marginLeft, barcodeY, { width: 200, height: 40 });
             } catch {
-              doc.fontSize(7).fillColor("#999999").text("Barcode unavailable", currentX, barcodeY);
+              doc.fontSize(7).fillColor("#999999").text("Barcode unavailable", marginLeft, barcodeY);
             }
           }
 
@@ -344,14 +434,14 @@ export async function registerRoutes(
             }
           }
 
-          doc.fontSize(7).fillColor("#999999")
-            .text(`Verify: ${verifyUrl}`, marginLeft, barcodeY + 50, { width: contentWidth - 90 });
+          doc.fontSize(7).fillColor("#999999").text(`Verify: ${verifyUrl}`, marginLeft, barcodeY + 50, {
+            width: contentWidth - 90,
+          });
 
-          doc.fontSize(7).fillColor("#aaaaaa")
-            .text("This document is digitally verified by Meru Express.", marginLeft, doc.page.height - 40, {
-              width: contentWidth,
-              align: "center",
-            });
+          doc.fontSize(7).fillColor("#aaaaaa").text("This document is digitally verified by Meru Express.", marginLeft, doc.page.height - 40, {
+            width: contentWidth,
+            align: "center",
+          });
 
           doc.end();
         } catch (pdfErr) {
@@ -363,7 +453,7 @@ export async function registerRoutes(
         const pdfHash = computePdfSha256(pdfBuffer);
         await updatePdfHash(briefId, pdfHash);
       } catch {
-        // best-effort; don't block response
+        // best-effort
       }
 
       res.setHeader("Content-Type", "application/pdf");
@@ -371,16 +461,14 @@ export async function registerRoutes(
       return res.send(pdfBuffer);
     } catch (error) {
       console.error("PDF generation error:", error);
-      res.status(500).json({ message: "Failed to generate PDF." });
+      return res.status(500).json({ message: "Failed to generate PDF." });
     }
   });
 
   app.get("/verify/:code", async (req, res) => {
     try {
       const { code } = req.params;
-      if (!code) {
-        return res.json({ valid: false });
-      }
+      if (!code) return res.json({ valid: false });
       const result = await lookupVerification(code);
       return res.json(result || { valid: false });
     } catch (error) {
