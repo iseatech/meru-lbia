@@ -1,0 +1,13 @@
+import { classifyHS } from "./hs-engine";
+
+export function registerHtsRoutes(app: any) {
+  app.post("/api/hts/classify", async (req: any, res: any) => {
+    try {
+      const { description } = req.body || {};
+      const result = classifyHS({ description });
+      res.json({ ok: true, result });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, error: err?.message || "HTS error" });
+    }
+  });
+}
