@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { rerankCandidate } from "./reranker";
 import path from "node:path";
 
 export type UsitcHtsRow = {
@@ -128,8 +129,24 @@ export function searchHtsByDescription(
 
     // Keep reasons
     const reasons = candidateReasons.get(code) || [];
-    if (isSpecial) reasons.push("penalty:special_chapter(98/99)");
-    if (query.trim().length < 25) reasons.push("query:short");
+    if (isSpecial) {
+  reasons.push("penalty:special_chapter(98/99)");
+  if (!/\b(9902|temporary|suspension|special provision|chapter 99|chapter 98)\b/i.test(query)) {
+    score *= 0.35;
+    reasons.push("penalty:special_strong");
+  }
+}
+    
+if (query.trim().length < 25) reasons.push("query:short");
+
+    const rr = rerankCandidate(
+      score,
+      String(row?.description || ""),
+      String(row?.htsno || ""),
+      { query, description: String(query || "").split("|")[0].trim(), material: undefined }
+    );
+    score = rr.score;
+    for (const msg of rr.whyExtra) reasons.push("rerank:" + msg);
 
     out.push({
       code,

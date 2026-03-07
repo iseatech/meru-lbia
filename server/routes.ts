@@ -1,3 +1,5 @@
+import { runHsEngineV1 } from "./intelligence/core/hs/hs-engine";
+import { registerHtsRoutes } from "./intelligence/core/hs/hts-route";
 import type { Express } from "express";
 import type { Server } from "http";
 
@@ -75,6 +77,9 @@ export async function registerRoutes(
   // Admin routes may depend on auth; keep them registered
   // (Admin gating should block unauthenticated/non-admin users anyway)
   registerAdminRoutes(app);
+
+    // --- HTS / USITC official search ---
+    registerHtsRoutes(app);
 
   const isAuthenticated = useReplitAuth ? replitIsAuthenticated : localIsAuthenticated;
 
@@ -200,12 +205,35 @@ export async function registerRoutes(
   });
 
   // --- Business endpoints ---
+
+  // TEMP: HS Engine v1 test endpoint (remove after verification)
+  app.post("/api/hs/test", async (req: any, res) => {
+    try {
+      const payload = req.body || {};
+      const hsResult = await runHsEngineV1(payload);
+      return res.json({ ok: true, hs_result_v1: hsResult });
+    } catch (e: any) {
+      console.error("HS test endpoint error:", e);
+      return res.status(400).json({ ok: false, message: e?.message || "Invalid HS intake" });
+    }
+  });
   app.post("/meru/decision-briefs", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || null;
       const payload = req.body || {};
       const countryOfOrigin = payload.country_of_origin || null;
       const serviceType = payload.service_type || "logistics-decision-brief";
+
+      // === HS / Customs Engine v1 ===
+      if (String(serviceType) === "hs_customs_v1") {
+        try {
+          const hsResult = await runHsEngineV1(payload);
+          payload.hs_result_v1 = hsResult;
+        } catch (e: any) {
+          console.error("HS Engine v1 error:", e);
+          return res.status(400).json({ message: e?.message || "Invalid HS intake" });
+        }
+      }
 
       let intelligence = null;
       if (countryOfOrigin) {
