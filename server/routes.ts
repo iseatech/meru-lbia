@@ -30,7 +30,7 @@ import {
 
 import PDFDocument from "pdfkit";
 import { renderIntelligencePdf } from "./meru/briefTemplate";
-import { emitTaskStart } from "./ai-core-foundation";
+import { emitTaskStart, getAssistantPersistedState, initializeAuditorPersistencePipeline } from "./ai-core-foundation";
 
 /**
  * Codespaces-friendly auth strategy:
@@ -63,6 +63,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  await initializeAuditorPersistencePipeline();
+
   const useReplitAuth = shouldUseReplitAuth();
 
   if (useReplitAuth) {
@@ -206,6 +208,17 @@ export async function registerRoutes(
   });
 
   // --- Business endpoints ---
+
+
+  app.get("/api/ai-core/assistant-state", isAuthenticated, async (_req: any, res) => {
+    try {
+      const state = await getAssistantPersistedState();
+      return res.json({ ok: true, state });
+    } catch (error) {
+      console.error("Assistant state read error:", error);
+      return res.status(500).json({ ok: false, message: "Failed to read assistant state." });
+    }
+  });
 
   // TEMP: HS Engine v1 test endpoint (remove after verification)
   app.post("/api/hs/test", async (req: any, res) => {
