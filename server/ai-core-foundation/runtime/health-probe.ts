@@ -16,8 +16,9 @@ export async function runHealthProbe(
   for (const check of checks) {
     try {
       results[check.name] = await check.probe();
-    } catch {
+    } catch (error) {
       results[check.name] = false;
+      console.warn("[ai-core] health check probe failed:", check.name, error);
     }
   }
 

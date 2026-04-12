@@ -49,12 +49,24 @@ export interface AiCoreTaskStartEvent extends AiCoreEventBase {
   details?: Record<string, unknown>;
 }
 
+export interface AiCoreLedgerEvent extends AiCoreEventBase {
+  type: "ledger-writer" | "ledger-feedback" | "ledger-outcome" | "calibration-proposal";
+  payload?: Record<string, unknown>;
+}
+
+export interface AiCoreNotificationEvent extends AiCoreEventBase {
+  type: "notification.recorded" | "assistant.snapshot" | "system.health.warning";
+  payload?: Record<string, unknown>;
+}
+
 export type AiCoreEvent =
   | AiCoreLifecycleEvent
   | AiCoreLearningEvent
   | AiCoreAuditEvent
   | AiCoreHealthEvent
-  | AiCoreTaskStartEvent;
+  | AiCoreTaskStartEvent
+  | AiCoreLedgerEvent
+  | AiCoreNotificationEvent;
 
 export type AiCoreEventHandler<T extends AiCoreEvent = AiCoreEvent> = (
   event: T,
