@@ -7,3 +7,4 @@ export * from "./trace/phase-lifecycle";
 export * from "./learning/learning-capture";
 export * from "./auditor/auditor-bootstrap";
 export * from "./runtime/health-probe";
+export * from "./runtime/task-start";

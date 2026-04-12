@@ -30,6 +30,7 @@ import {
 
 import PDFDocument from "pdfkit";
 import { renderIntelligencePdf } from "./meru/briefTemplate";
+import { emitTaskStart } from "./ai-core-foundation";
 
 /**
  * Codespaces-friendly auth strategy:
@@ -273,6 +274,17 @@ export async function registerRoutes(
           throw dbErr;
         }
       }
+
+      void emitTaskStart({
+        taskId: String(briefRecord?.id ?? ""),
+        correlationId: userId ? String(userId) : undefined,
+        details: {
+          serviceType,
+          countryOfOrigin,
+        },
+      }).catch((eventErr) => {
+        console.warn("AI CORE TaskStart hook error:", eventErr);
+      });
 
       return res.json({ message: "Decision brief created", id: briefRecord?.id });
     } catch (error) {
