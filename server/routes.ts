@@ -1,17 +1,17 @@
 import { runHsEngineV1 } from "./intelligence/core/hs/hs-engine";
 import { registerHtsRoutes } from "./intelligence/core/hs/hts-route";
+import { randomUUID } from "node:crypto";
 import type { Express } from "express";
 import type { Server } from "http";
 
 import {
   setupAuth,
-  registerAuthRoutes,
   isAuthenticated as replitIsAuthenticated,
 } from "./replit_integrations/auth";
 
-import bcrypt from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
 import { db } from "./db";
-import { users, meruDecisionBriefs } from "@shared/schema";
+import { users, meruDecisionBriefs, meruUserRoles, meruAdmin2fa } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
 import { registerAdminRoutes } from "./admin";
@@ -30,6 +30,32 @@ import {
 
 import PDFDocument from "pdfkit";
 import { renderIntelligencePdf } from "./meru/briefTemplate";
+import {
+  writeLearningLedgerDefaults,
+  writeLearningLedgerEvent,
+} from "./learning-ledger/services/ledger-writer";
+import { eventBus } from "./ai-core-foundation/events/event-bus";
+import type { AiCoreEvent } from "./ai-core-foundation/events/event-types";
+import { createTraceContext } from "./ai-core-foundation/trace/trace-context";
+import { registerAuditorBootstrapReaction } from "./ai-core-foundation/auditor/auditor-bootstrap";
+import { registerLearningCaptureReaction } from "./ai-core-foundation/learning/learning-capture";
+
+let aiCorePhase1WiringInitialized = false;
+
+function ensureAiCorePhase1Wiring() {
+  if (aiCorePhase1WiringInitialized) {
+    return;
+  }
+
+  registerAuditorBootstrapReaction({
+    actor: "ai-core",
+    mode: "observe",
+    version: "phase-1",
+  });
+
+  registerLearningCaptureReaction();
+  aiCorePhase1WiringInitialized = true;
+}
 
 /**
  * Codespaces-friendly auth strategy:
@@ -40,22 +66,106 @@ function shouldUseReplitAuth() {
   return Boolean(process.env.REPLIT_CLIENT_ID && process.env.REPLIT_CLIENT_SECRET);
 }
 
-function localIsAuthenticated(req: any, res: any, next: any) {
-  // Session-based fallback (works in Codespaces if express-session is enabled in server/index.ts)
-  const s = req?.session;
-  if (s?.userId) {
-    // Normalize "req.user" to match the existing code paths
+function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+
+  if (!url || !serviceKey) {
+    throw new Error(
+      "SUPABASE_URL and SUPABASE_SERVICE_KEY are required."
+    );
+  }
+
+  return createClient(url, serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+function getBearerToken(req: any): string | null {
+  return req.headers.authorization?.split(" ")[1] || null;
+}
+
+async function upsertLocalUserFromSupabase(user: any): Promise<string> {
+  const firstName = user?.user_metadata?.first_name ?? null;
+  const lastName = user?.user_metadata?.last_name ?? null;
+  const profileImageUrl = user?.user_metadata?.avatar_url ?? null;
+
+  // Check if a local row already exists with this email (possibly from a
+  // previous auth provider with a different id). If so, update it in place
+  // to avoid a unique constraint violation on users.email, and return the
+  // existing local id so FK chains (roles, 2FA, briefs) remain intact.
+  if (user.email) {
+    const [existing] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, user.email));
+
+    if (existing) {
+      await db
+        .update(users)
+        .set({ firstName, lastName, profileImageUrl, updatedAt: new Date() })
+        .where(eq(users.email, user.email));
+      return existing.id;
+    }
+  }
+
+  // No conflict: insert with Supabase id
+  await db
+    .insert(users)
+    .values({
+      id: user.id,
+      email: user.email ?? null,
+      firstName,
+      lastName,
+      profileImageUrl,
+    })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: {
+        email: user.email ?? null,
+        firstName,
+        lastName,
+        profileImageUrl,
+        updatedAt: new Date(),
+      },
+    });
+
+  return user.id;
+}
+
+async function lookupRole(userId: string): Promise<string> {
+  const [row] = await db.select().from(meruUserRoles).where(eq(meruUserRoles.userId, userId));
+  return row?.role ?? "user";
+}
+
+async function localIsAuthenticated(req: any, res: any, next: any) {
+  try {
+    const token = getBearerToken(req);
+    if (!token) {
+      return res.status(401).json({ message: "Authentication required." });
+    }
+
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) {
+      return res.status(401).json({ message: "Authentication required." });
+    }
+
     req.user = {
       claims: {
-        sub: s.userId,
-        email: s.email || null,
-        first_name: s.firstName || null,
-        last_name: s.lastName || null,
+        sub: data.user.id,
+        email: data.user.email || null,
+        first_name: data.user.user_metadata?.first_name || null,
+        last_name: data.user.user_metadata?.last_name || null,
       },
     };
     return next();
+  } catch {
+    return res.status(401).json({ message: "Authentication required." });
   }
-  return res.status(401).json({ message: "Authentication required." });
 }
 
 export async function registerRoutes(
@@ -67,7 +177,6 @@ export async function registerRoutes(
   if (useReplitAuth) {
     // Replit OIDC auth enabled only when env vars exist
     await setupAuth(app);
-    registerAuthRoutes(app);
   } else {
     console.warn(
       "[auth] Replit auth disabled (missing REPLIT_CLIENT_ID/REPLIT_CLIENT_SECRET). Using local session auth."
@@ -78,130 +187,60 @@ export async function registerRoutes(
   // (Admin gating should block unauthenticated/non-admin users anyway)
   registerAdminRoutes(app);
 
-    // --- HTS / USITC official search ---
-    registerHtsRoutes(app);
+  // --- HTS / USITC official search ---
+  registerHtsRoutes(app);
 
-  const isAuthenticated = useReplitAuth ? replitIsAuthenticated : localIsAuthenticated;
+  ensureAiCorePhase1Wiring();
 
-  // --- Local email/password auth (session-based) ---
-  app.post("/api/auth/register", async (req: any, res) => {
-    try {
-      const { email, password, firstName, lastName } = req.body;
+  const isAuthenticated = localIsAuthenticated;
 
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required." });
-      }
-
-      if (
-        password.length < 8 ||
-        !/[A-Z]/.test(password) ||
-        !/[a-z]/.test(password) ||
-        (!/[0-9]/.test(password) && !/[^A-Za-z0-9]/.test(password))
-      ) {
-        return res.status(400).json({
-          message:
-            "Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number or special character.",
-        });
-      }
-
-      const [existing] = await db.select().from(users).where(eq(users.email, email));
-      if (existing) {
-        return res.status(409).json({ message: "An account with this email already exists." });
-      }
-
-      const passwordHash = await bcrypt.hash(password, 12);
-
-      const [user] = await db
-        .insert(users)
-        .values({
-          email,
-          firstName: firstName || null,
-          lastName: lastName || null,
-          passwordHash,
-        })
-        .returning();
-
-      // Session login (Codespaces/local)
-      if (req.session) {
-        req.session.userId = user.id;
-        req.session.email = user.email;
-        req.session.firstName = user.firstName;
-        req.session.lastName = user.lastName;
-      }
-
-      return res.json({
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      });
-    } catch (error) {
-      console.error("Register error:", error);
-      return res.status(500).json({ message: "Registration failed." });
+  app.get("/api/auth/me", async (req: any, res) => {
+    // Step 1: token validation — 401 only for auth failures
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Authentication required." });
     }
-  });
 
-  app.post("/api/auth/login", async (req: any, res) => {
+    let supabaseUser: any;
     try {
-      const { email, password } = req.body;
-
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required." });
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error || !data.user) {
+        return res.status(401).json({ message: "Authentication required." });
       }
-
-      const [user] = await db.select().from(users).where(eq(users.email, email));
-      if (!user || !user.passwordHash) {
-        return res.status(401).json({ message: "Invalid email or password." });
-      }
-
-      const valid = await bcrypt.compare(password, user.passwordHash);
-      if (!valid) {
-        return res.status(401).json({ message: "Invalid email or password." });
-      }
-
-      // Session login (Codespaces/local)
-      if (req.session) {
-        req.session.userId = user.id;
-        req.session.email = user.email;
-        req.session.firstName = user.firstName;
-        req.session.lastName = user.lastName;
-      }
-
-      return res.json({
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      return res.status(500).json({ message: "Login failed." });
-    }
-  });
-
-  app.post("/api/auth/logout", (req: any, res) => {
-    try {
-      if (req.session) {
-        req.session.destroy(() => {});
-      }
-      return res.json({ ok: true });
+      supabaseUser = data.user;
     } catch {
-      return res.json({ ok: true });
+      return res.status(401).json({ message: "Authentication required." });
     }
-  });
 
-  app.get("/api/auth/me", (req: any, res) => {
-    const s = req?.session;
-    if (!s?.userId) return res.json({ user: null });
+    // Step 2: DB operations — 500 for internal failures
+    try {
+      const localUserId = await upsertLocalUserFromSupabase(supabaseUser);
 
-    return res.json({
-      user: {
-        id: s.userId,
-        email: s.email || null,
-        first_name: s.firstName || null,
-        last_name: s.lastName || null,
-      },
-    });
+      const role = await lookupRole(localUserId);
+      let twoFaEnabled = false;
+      let twoFaVerified = false;
+      if (role === "admin") {
+        const [record] = await db.select().from(meruAdmin2fa).where(eq(meruAdmin2fa.userId, localUserId));
+        twoFaEnabled = record?.isEnabled ?? false;
+        twoFaVerified = !!(req.session as any)?.twoFaVerified;
+      }
+
+      return res.json({
+        user: {
+          id: localUserId,
+          email: supabaseUser.email || null,
+          firstName: supabaseUser.user_metadata?.first_name || null,
+          lastName: supabaseUser.user_metadata?.last_name || null,
+        },
+        role,
+        twoFaEnabled,
+        twoFaVerified,
+      });
+    } catch (e) {
+      console.error("[/api/auth/me] DB error:", e);
+      return res.status(500).json({ message: "Internal server error." });
+    }
   });
 
   // --- Business endpoints ---
@@ -223,13 +262,94 @@ export async function registerRoutes(
       const payload = req.body || {};
       const countryOfOrigin = payload.country_of_origin || null;
       const serviceType = payload.service_type || "logistics-decision-brief";
+      const aiTaskName = "decision-brief.create";
+      const aiPhaseName = "decision-brief.workflow";
+
+      const aiTrace = createTraceContext({
+        tags: {
+          route: "/meru/decision-briefs",
+          serviceType: String(serviceType),
+        },
+      });
+
+      const emitAiCoreEvent = (event: Partial<AiCoreEvent> & { type: string }) => {
+        void eventBus
+          .publish({
+            id: randomUUID(),
+            phase: "trace",
+            timestamp: new Date().toISOString(),
+            severity: "info",
+            correlationId: aiTrace.correlationId,
+            ...event,
+          } as AiCoreEvent)
+          .catch((error) => {
+            console.error("AI CORE lifecycle publish error:", error);
+          });
+      };
+
+      emitAiCoreEvent({
+        type: "task.start",
+        taskName: aiTaskName,
+        metadata: {
+          userId,
+          serviceType,
+          countryOfOrigin,
+        },
+      });
+
+      emitAiCoreEvent({
+        type: "phase.open",
+        taskName: aiTaskName,
+        phaseName: aiPhaseName,
+        metadata: {
+          expectedSteps: 3,
+        },
+      });
+
+      emitAiCoreEvent({
+        type: "validation.executed",
+        taskName: aiTaskName,
+        validationName: "request.payload",
+        passed: true,
+      });
 
       // === HS / Customs Engine v1 ===
       if (String(serviceType) === "hs_customs_v1") {
         try {
           const hsResult = await runHsEngineV1(payload);
           payload.hs_result_v1 = hsResult;
+          emitAiCoreEvent({
+            type: "step.executed",
+            taskName: aiTaskName,
+            stepName: "hs_engine",
+            status: "ok",
+          });
         } catch (e: any) {
+          emitAiCoreEvent({
+            type: "validation.executed",
+            taskName: aiTaskName,
+            validationName: "hs_engine.input",
+            passed: false,
+            metadata: { message: e?.message || "Invalid HS intake" },
+          });
+          emitAiCoreEvent({
+            type: "step.executed",
+            taskName: aiTaskName,
+            stepName: "hs_engine",
+            status: "failed",
+          });
+          emitAiCoreEvent({
+            type: "phase.close",
+            taskName: aiTaskName,
+            phaseName: aiPhaseName,
+            metadata: { reason: "hs_validation_failed" },
+          });
+          emitAiCoreEvent({
+            type: "task.end",
+            taskName: aiTaskName,
+            status: "failed",
+            metadata: { reason: "hs_validation_failed" },
+          });
           console.error("HS Engine v1 error:", e);
           return res.status(400).json({ message: e?.message || "Invalid HS intake" });
         }
@@ -238,10 +358,75 @@ export async function registerRoutes(
       let intelligence = null;
       if (countryOfOrigin) {
         try {
-          intelligence = await runIntelligenceEngine(countryOfOrigin);
+          intelligence = await runIntelligenceEngine(countryOfOrigin, {
+            onPhaseOpen: (phaseName, metadata) => {
+              emitAiCoreEvent({
+                type: "phase.open",
+                taskName: aiTaskName,
+                phaseName,
+                metadata,
+              });
+            },
+            onValidation: (validationName, passed, metadata) => {
+              emitAiCoreEvent({
+                type: "validation.executed",
+                taskName: aiTaskName,
+                validationName,
+                passed,
+                metadata,
+              });
+            },
+            onStep: (stepName, status, metadata) => {
+              emitAiCoreEvent({
+                type: "step.executed",
+                taskName: aiTaskName,
+                stepName,
+                status,
+                metadata,
+              });
+            },
+            onPhaseClose: (phaseName, metadata) => {
+              emitAiCoreEvent({
+                type: "phase.close",
+                taskName: aiTaskName,
+                phaseName,
+                metadata,
+              });
+            },
+            onTaskEnd: (status, metadata) => {
+              emitAiCoreEvent({
+                type: "task.end",
+                taskName: aiTaskName,
+                status,
+                metadata,
+              });
+            },
+          });
+          emitAiCoreEvent({
+            type: "step.executed",
+            taskName: aiTaskName,
+            stepName: "intelligence_enrichment",
+            status: "ok",
+            metadata: { source: "decision_core" },
+          });
         } catch (err) {
+          emitAiCoreEvent({
+            type: "step.executed",
+            taskName: aiTaskName,
+            stepName: "intelligence_enrichment",
+            status: "failed",
+            metadata: { source: "decision_core" },
+          });
           console.error("Intelligence engine error:", err);
         }
+      } else {
+        emitAiCoreEvent({
+          type: "step.executed",
+          taskName: aiTaskName,
+          stepName: "intelligence_enrichment",
+          status: "ok",
+          metadata: { skipped: true },
+        });
       }
 
       let briefRecord: any;
@@ -270,9 +455,85 @@ export async function registerRoutes(
             })
             .returning();
         } else {
+          emitAiCoreEvent({
+            type: "step.executed",
+            taskName: aiTaskName,
+            stepName: "decision_brief_persisted",
+            status: "failed",
+          });
           throw dbErr;
         }
       }
+
+      if (briefRecord) {
+        emitAiCoreEvent({
+          type: "step.executed",
+          taskName: aiTaskName,
+          stepName: "decision_brief_persisted",
+          status: "ok",
+        });
+      }
+
+      try {
+        const correlationId =
+          typeof payload?.correlation_id === "string" && payload.correlation_id.trim().length > 0
+            ? payload.correlation_id.trim()
+            : `learning-ledger:${String(briefRecord?.id || "")}`;
+
+        await writeLearningLedgerEvent({
+          correlationId,
+          eventType: "decision_brief_generated",
+          userId,
+          serviceType: serviceType ? String(serviceType) : null,
+          decisionBriefId: String(briefRecord?.id || ""),
+          hsClassificationId:
+            typeof payload?.hs_classification_id === "string"
+              ? payload.hs_classification_id
+              : null,
+          payload,
+          decisionSnapshot: {
+            id: briefRecord?.id,
+            service_type: serviceType,
+            status: "completed",
+            country_of_origin: countryOfOrigin,
+          },
+          complianceSnapshot:
+            intelligence && typeof intelligence === "object"
+              ? (intelligence as unknown as Record<string, unknown>)
+              : null,
+        });
+
+        await writeLearningLedgerDefaults({
+          correlationId,
+          decisionBriefId: String(briefRecord?.id || ""),
+        });
+
+        emitAiCoreEvent({
+          type: "step.executed",
+          taskName: aiTaskName,
+          stepName: "learning_ledger_written",
+          status: "ok",
+        });
+      } catch (ledgerError) {
+        emitAiCoreEvent({
+          type: "step.executed",
+          taskName: aiTaskName,
+          stepName: "learning_ledger_written",
+          status: "failed",
+        });
+        console.error("Learning ledger write error:", ledgerError);
+      }
+
+      emitAiCoreEvent({
+        type: "phase.close",
+        taskName: aiTaskName,
+        phaseName: aiPhaseName,
+      });
+      emitAiCoreEvent({
+        type: "task.end",
+        taskName: aiTaskName,
+        status: "ok",
+      });
 
       return res.json({ message: "Decision brief created", id: briefRecord?.id });
     } catch (error) {
