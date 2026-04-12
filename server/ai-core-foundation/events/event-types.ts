@@ -42,11 +42,19 @@ export interface AiCoreHealthEvent extends AiCoreEventBase {
   checks: Record<string, boolean>;
 }
 
+export interface AiCoreTaskStartEvent extends AiCoreEventBase {
+  type: "task.started";
+  taskType: "decision-workflow";
+  taskId: string;
+  details?: Record<string, unknown>;
+}
+
 export type AiCoreEvent =
   | AiCoreLifecycleEvent
   | AiCoreLearningEvent
   | AiCoreAuditEvent
-  | AiCoreHealthEvent;
+  | AiCoreHealthEvent
+  | AiCoreTaskStartEvent;
 
 export type AiCoreEventHandler<T extends AiCoreEvent = AiCoreEvent> = (
   event: T,
