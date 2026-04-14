@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eventBus } from "../events/event-bus";
-import { TraceContext } from "../trace/trace-context";
+import { TraceContext, createTraceContext } from "../trace/trace-context";
 
 export interface LearningSignal {
   signalType: "feedback" | "outcome" | "drift";
@@ -22,4 +22,28 @@ export async function captureLearningSignal(
     signalType: signal.signalType,
     payload: signal.payload,
   });
+}
+
+export function registerLearningCaptureReaction(): void {
+  const ledgerEventTypes = [
+    "ledger-writer",
+    "ledger-feedback",
+    "ledger-outcome",
+  ] as const;
+
+  for (const evType of ledgerEventTypes) {
+    eventBus.subscribe(evType, async (event) => {
+      const trace = createTraceContext({
+        tags: { correlationId: event.correlationId ?? "" },
+      });
+      await captureLearningSignal(trace, {
+        signalType: "outcome",
+        payload: {
+          sourceEvent: evType,
+          ...(typeof event === "object" && event !== null ? event as Record<string, unknown> : {}),
+        },
+        severity: "info",
+      });
+    });
+  }
 }

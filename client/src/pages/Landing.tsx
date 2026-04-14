@@ -1,6 +1,7 @@
-import { Link } from "wouter";
 import { useEffect } from "react";
 import SEO from "../components/SEO";
+import { landingContent } from "../mvcs/content";
+import { CtaSection, FeatureGridSection, HeroSection, SectionWrapper } from "../mvcs/sections";
 
 export default function Landing() {
   useEffect(() => {
@@ -32,35 +33,13 @@ export default function Landing() {
   return (
     <>
       <SEO
-        title="Meru Express - Logistics Decision Intelligence"
-        description="Executive-grade logistics and trade intelligence. Decision briefs, customs compliance, and country risk analysis for importers, freight forwarders and project cargo operators."
-        canonical="/"
+        title={landingContent.seo.title}
+        description={landingContent.seo.description}
+        canonical={landingContent.seo.canonical}
       />
 
-      <section className="hero-section">
-        <div className="hero-pattern" />
-        <div className="hero-glow" />
-        <div className="hero-content">
-          <span className="hero-label" data-testid="text-hero-label">Logistics Decision Intelligence</span>
-          <h1 data-testid="text-hero-title">Make smarter logistics decisions, faster</h1>
-          <p data-testid="text-hero-description">
-            Executive-grade decision briefs, customs compliance analysis,
-            and trade intelligence for global supply chain professionals.
-          </p>
-          <div className="hero-actions">
-            <Link href="/services">
-              <span className="btn-hero-primary" data-testid="link-explore-services">
-                Explore Services
-              </span>
-            </Link>
-            <Link href="/sample">
-              <span className="btn-hero-outline" data-testid="link-view-sample">
-                View Sample Brief
-              </span>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <>
+      {landingContent.hero ? <HeroSection content={landingContent.hero} /> : null}
 
       <div className="trust-bar">
         <div className="trust-item">
@@ -81,9 +60,23 @@ export default function Landing() {
         </div>
       </div>
 
-      <section className="landing-section">
+      {landingContent.sections[0] ? (
+        <SectionWrapper
+          label={landingContent.sections[0].label}
+          title={landingContent.sections[0].title}
+          paragraph={landingContent.sections[0].paragraph}
+        >
+          <FeatureGridSection
+            items={landingContent.sections[0].features ?? []}
+            className="mkt-grid-3"
+            cardClassName="mkt-card"
+          />
+        </SectionWrapper>
+      ) : null}
+
+      <section className="landing-section alt">
         <div className="landing-inner">
-          <span className="section-label">Capabilities</span>
+          <span className="section-label">Core Services</span>
           <h2>Intelligence that drives decisions</h2>
           <p className="section-desc">
             From country risk assessment to HS code compliance, our platform delivers
@@ -124,9 +117,9 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="landing-section alt">
+      <section className="landing-section">
         <div className="landing-inner">
-          <span className="section-label">What You Get</span>
+          <span className="section-label">Value Proposition</span>
           <h2>Every brief includes</h2>
           <div className="deliverables-grid">
             <div className="deliverable-item" data-testid="deliverable-risk">
@@ -180,6 +173,31 @@ export default function Landing() {
 
       <section className="landing-section">
         <div className="landing-inner">
+          <span className="section-label">API-Ready Integration</span>
+          <h2>Built for modern logistics stacks</h2>
+          <p className="section-desc">
+            Plug verified intelligence outputs into your internal workflows,
+            customer portals, or reporting layers without introducing operational friction.
+          </p>
+          <div className="integration-layout">
+            <div className="integration-copy">
+              <ul className="sales-bullets" data-testid="list-api-ready">
+                <li>Structured outputs for workflow handoff and downstream automation</li>
+                <li>Verification-first artifacts for auditability and governance</li>
+                <li>Consistent formatting for cross-team communication</li>
+              </ul>
+            </div>
+            <div className="integration-media">
+              <div className="mkt-media-placeholder" data-testid="placeholder-integration-diagram">
+                Placeholder Diagram 1200x700
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-section landing-security-section">
+        <div className="landing-inner">
           <span className="section-label">Security</span>
           <h2>Enterprise-grade document integrity</h2>
           <p className="section-desc">
@@ -222,19 +240,17 @@ export default function Landing() {
       </section>
 
       <section className="cta-section">
-        <h2>Ready to get started?</h2>
-        <p>
-          Create your account and request your first logistics decision brief today.
-        </p>
-        <div className="hero-actions">
-          <Link href="/auth/signup">
-            <span className="btn-hero-primary" data-testid="link-cta-signup">Create Free Account</span>
-          </Link>
-          <Link href="/contact">
-            <span className="btn-hero-outline" data-testid="link-cta-contact">Contact Sales</span>
-          </Link>
+        <div className="landing-inner">
+          {landingContent.sections[1] ? (
+            <CtaSection
+              title={landingContent.sections[1].title ?? ""}
+              paragraph={landingContent.sections[1].paragraph}
+              ctas={landingContent.sections[1].ctas ?? []}
+            />
+          ) : null}
         </div>
       </section>
+      </>
     </>
   );
 }

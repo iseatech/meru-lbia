@@ -10,6 +10,7 @@ import Sample from "./pages/Sample";
 import Contact from "./pages/Contact";
 import AuthSignUp from "./pages/AuthSignUp";
 import AuthLogin from "./pages/AuthLogin";
+import AuthConfirm from "./pages/AuthConfirm";
 import NotFound from "./pages/NotFound";
 import LogisticsDetails from "./pages/LogisticsDetails";
 import LogisticsRequest from "./pages/LogisticsRequest";
@@ -102,8 +103,8 @@ function DashboardGate() {
 }
 
 function InactivityWrapper({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  useInactivityLogout(isAuthenticated);
+  const { isAuthenticated, logout } = useAuth();
+  useInactivityLogout(isAuthenticated, logout);
   return <>{children}</>;
 }
 
@@ -155,6 +156,7 @@ function AppRoutes() {
               <Route path="/contact" component={Contact} />
               <Route path="/auth/signup" component={AuthSignUp} />
               <Route path="/auth/login" component={AuthLogin} />
+              <Route path="/auth/confirm" component={AuthConfirm} />
               <Route path="/account" component={MyAccount} />
               <Route path="/account/profile" component={AccountProfile} />
               <Route path="/account/company" component={AccountCompany} />

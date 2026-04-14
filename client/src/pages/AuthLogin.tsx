@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { supabase } from "@/lib/supabase";
 
 export default function AuthLogin() {
   const [email, setEmail] = useState("");
@@ -15,18 +16,23 @@ export default function AuthLogin() {
     setServerError("");
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setServerError(data.message || "Login failed.");
+
+      if (error) {
+        setServerError(error.message || "Login failed.");
         setSubmitting(false);
         return;
       }
+
+      if (!data.session) {
+        setServerError("Please verify your email before logging in.");
+        setSubmitting(false);
+        return;
+      }
+
       window.location.href = "/dashboard";
     } catch {
       setServerError("Something went wrong. Please try again.");

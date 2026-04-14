@@ -17,7 +17,7 @@ function tryLoadLogo(): boolean {
 export default function Header() {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
-  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+  const { isAuthenticated, isLoading, isAdmin, logout } = useAuth();
   const hasLogo = tryLoadLogo();
 
   const links = [
@@ -29,7 +29,7 @@ export default function Header() {
   ];
 
   return (
-    <header className="site-header">
+    <header className="site-header site-header-premium">
       <Link href="/">
         <span className="header-brand" data-testid="link-home">
           {hasLogo ? (
@@ -51,7 +51,7 @@ export default function Header() {
           {links.map((l) => (
             <Link key={l.href} href={l.href}>
               <span
-                className={location === l.href ? "active" : ""}
+                className={location === l.href ? "active nav-link-item" : "nav-link-item"}
                 onClick={() => setOpen(false)}
               >
                 {l.label}
@@ -61,7 +61,7 @@ export default function Header() {
           {isAuthenticated && (
             <Link href="/dashboard">
               <span
-                className={location === "/dashboard" ? "active" : ""}
+                className={location === "/dashboard" ? "active nav-link-item" : "nav-link-item"}
                 onClick={() => setOpen(false)}
                 data-testid="link-dashboard"
               >
@@ -72,7 +72,7 @@ export default function Header() {
           {isAuthenticated && isAdmin && (
             <Link href="/admin">
               <span
-                className={location.startsWith("/admin") ? "active" : ""}
+                className={location.startsWith("/admin") ? "active nav-link-item" : "nav-link-item"}
                 onClick={() => setOpen(false)}
                 data-testid="link-admin"
               >
@@ -87,9 +87,18 @@ export default function Header() {
               <Link href="/account">
                 <span className="btn-link-primary" onClick={() => setOpen(false)} data-testid="link-my-account">My Account</span>
               </Link>
-              <a href="/api/logout" className="btn-link" data-testid="button-logout" onClick={() => setOpen(false)}>
+              <button
+                type="button"
+                className="btn-link"
+                data-testid="button-logout"
+                onClick={() => {
+                  setOpen(false);
+                  logout();
+                }}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
                 Log Out
-              </a>
+              </button>
             </>
           ) : (
             <>

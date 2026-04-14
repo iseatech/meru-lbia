@@ -1,52 +1,72 @@
 import SEO from "../components/SEO";
+import { aboutContent } from "../mvcs/content";
+import { FeatureGridSection, SectionWrapper } from "../mvcs/sections";
 
 export default function About() {
+  const mission = aboutContent.sections[0];
+  const builtFor = aboutContent.sections[1];
+
   return (
-    <div className="content-page">
+    <>
       <SEO
-        title="About - Meru Express"
-        description="Learn about Meru Express, the logistics decision intelligence platform built for importers, freight forwarders, and project cargo operators."
-        canonical="/about"
+        title={aboutContent.seo.title}
+        description={aboutContent.seo.description}
+        canonical={aboutContent.seo.canonical}
       />
-      <h1>About Meru Express</h1>
-      <p className="page-lead">
-        We deliver executive-grade logistics and trade intelligence so supply chain
-        professionals can make confident, data-driven decisions.
-      </p>
 
-      <h2>Our Mission</h2>
-      <p>
-        Meru Express was built to close the intelligence gap in international logistics.
-        Too many trade decisions are made with incomplete data, outdated country risk
-        profiles, or manual compliance checks that slow down operations and increase exposure.
-      </p>
-      <p>
-        We combine curated trade.gov intelligence, real-time country risk analysis,
-        and automated customs compliance into a single decision brief that arrives
-        in 24 hours or less — replacing weeks of fragmented research with one verified document.
-      </p>
+      <div className="content-page marketing-content-page">
+      <span className="mkt-kicker">{aboutContent.kicker}</span>
+      {aboutContent.hero ? (
+        <>
+          <h1>{aboutContent.hero.title}</h1>
+          <p className="page-lead">{aboutContent.hero.paragraph}</p>
+          <div className="mkt-media-placeholder" data-testid={aboutContent.hero.image?.testId}>
+            {aboutContent.hero.image ? (
+              <img
+                src={aboutContent.hero.image.src}
+                alt={aboutContent.hero.image.alt}
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+              />
+            ) : null}
+          </div>
+        </>
+      ) : null}
 
-      <h2>What We Do</h2>
-      <p>
-        Our platform produces decision briefs that cover trade barriers, regulatory
-        flags, sector-specific insights, and geopolitical risk assessments. Every
-        document is cryptographically verified with SHA-256 hashing and embedded
-        verification codes.
-      </p>
-      <ul>
-        <li>Logistics Decision Briefs with country-specific intelligence</li>
-        <li>Customs compliance analysis for HS code classification</li>
-        <li>Combined logistics and compliance packages</li>
-        <li>Document integrity verification with barcode and QR code authentication</li>
-      </ul>
+      {mission ? <SectionWrapper className="" innerClassName="" title={mission.title} paragraph={mission.paragraph} /> : null}
 
-      <h2>Built for Professionals</h2>
-      <p>
-        Whether you are a freight forwarder evaluating a new trade lane, an importer
-        navigating complex tariff schedules, or a project cargo operator planning
-        oversized shipments, Meru Express provides the intelligence you need
-        to move with confidence.
-      </p>
-    </div>
+      <SectionWrapper className="" innerClassName="" title="What We Do" paragraph="Our platform produces decision briefs that cover trade barriers, regulatory flags, sector-specific insights, and geopolitical risk assessments.">
+        <FeatureGridSection
+          className="mkt-grid-3"
+          cardClassName="mkt-card"
+          items={[
+            { title: "Logistics Decision Briefs", paragraph: "Country-specific intelligence for routing and sourcing decisions.", iconText: "01" },
+            { title: "Customs Compliance", paragraph: "HS code classification and duty-rate analysis at operational scale.", iconText: "02" },
+            { title: "Integrity Verification", paragraph: "Barcode and QR-backed, SHA-256 verified documents.", iconText: "03" },
+          ]}
+        />
+      </SectionWrapper>
+
+      <div className="mkt-trust-strip about-trust-strip" data-testid="about-trust-strip">
+        <div className="mkt-trust-block">
+          <strong>24h</strong>
+          <p>Typical decision brief turnaround</p>
+        </div>
+        <div className="mkt-trust-block">
+          <strong>SHA-256</strong>
+          <p>Integrity verification on every report</p>
+        </div>
+        <div className="mkt-trust-block">
+          <strong>190+</strong>
+          <p>Country intelligence coverage</p>
+        </div>
+        <div className="mkt-trust-block">
+          <strong>Enterprise</strong>
+          <p>Built for auditable team decisions</p>
+        </div>
+      </div>
+
+      {builtFor ? <SectionWrapper className="" innerClassName="" title={builtFor.title} paragraph={builtFor.paragraph} /> : null}
+      </div>
+    </>
   );
 }

@@ -8,6 +8,7 @@ export default function Footer() {
             <span className="footer-name">Meru Express</span>
           </div>
           <p className="footer-tagline">Logistics Decision Intelligence</p>
+          <p className="footer-note">Enterprise-grade intelligence briefs for modern logistics operations.</p>
         </div>
         <div className="footer-col">
           <h4>Product</h4>

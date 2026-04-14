@@ -2,12 +2,12 @@ import { useEffect, useRef, useCallback } from "react";
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 
-export function useInactivityLogout(isAuthenticated: boolean) {
+export function useInactivityLogout(isAuthenticated: boolean, logout: () => void) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doLogout = useCallback(() => {
-    window.location.href = "/api/logout";
-  }, []);
+    logout();
+  }, [logout]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);

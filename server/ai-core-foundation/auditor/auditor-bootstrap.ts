@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eventBus } from "../events/event-bus";
-import { TraceContext } from "../trace/trace-context";
+import { TraceContext, createTraceContext } from "../trace/trace-context";
 
 export interface AuditorConfig {
   actor: string;
@@ -25,5 +25,14 @@ export async function bootstrapAuditor(
       mode: config.mode,
       version: config.version,
     },
+  });
+}
+
+export function registerAuditorBootstrapReaction(config: AuditorConfig): void {
+  eventBus.subscribe("task.started", async (event) => {
+    const trace = createTraceContext({
+      tags: { correlationId: event.correlationId ?? "" },
+    });
+    await bootstrapAuditor(trace, config);
   });
 }

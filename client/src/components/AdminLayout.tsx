@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { useAuth } from "../hooks/use-auth";
 
 const menuItems = [
   { href: "/admin", label: "Overview", icon: "grid" },
@@ -49,6 +50,7 @@ function Breadcrumbs() {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { logout } = useAuth();
 
   return (
     <div className="admin-layout">
@@ -74,12 +76,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         ))}
         <div className="admin-sidebar-divider" />
-        <a href="/api/logout" className="admin-sidebar-link admin-sidebar-logout" data-testid="link-admin-logout">
+        <button
+          type="button"
+          onClick={() => logout()}
+          className="admin-sidebar-link admin-sidebar-logout"
+          data-testid="link-admin-logout"
+          style={{ background: "none", border: "none", width: "100%", textAlign: "left", padding: 0, cursor: "pointer" }}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="16" height="16" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
           </svg>
           Log Out
-        </a>
+        </button>
       </nav>
       <div className="admin-content">
         <Breadcrumbs />

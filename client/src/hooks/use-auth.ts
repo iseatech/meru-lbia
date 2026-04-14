@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@shared/models/auth";
+import { supabase } from "@/lib/supabase";
 
 type AuthUser = User & {
   role: string;
@@ -15,8 +17,19 @@ type MeResponse = {
 };
 
 async function fetchMe(): Promise<AuthUser | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token;
+  if (!accessToken) {
+    return null;
+  }
+
   const response = await fetch("/api/auth/me", {
-    credentials: "include",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (response.status === 401) {
@@ -39,7 +52,8 @@ async function fetchMe(): Promise<AuthUser | null> {
 }
 
 async function logout(): Promise<void> {
-  window.location.href = "/api/logout";
+  await supabase.auth.signOut();
+  window.location.href = "/auth/login";
 }
 
 export function useAuth() {
@@ -50,6 +64,13 @@ export function useAuth() {
     retry: false,
     staleTime: 1000 * 60 * 5,
   });
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    });
+    return () => subscription.unsubscribe();
+  }, [queryClient]);
 
   const logoutMutation = useMutation({
     mutationFn: logout,

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
+import { supabase } from "@/lib/supabase";
 
 function validatePassword(pw: string) {
   return {
@@ -39,19 +40,26 @@ export default function AuthSignUp() {
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
 
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password, firstName, lastName }),
+      const emailRedirectTo = `${window.location.origin}/auth/confirm`;
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo,
+          data: {
+            first_name: firstName || null,
+            last_name: lastName || null,
+          },
+        },
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setServerError(data.message || "Registration failed.");
+      if (error) {
+        setServerError(error.message || "Registration failed.");
         setSubmitting(false);
         return;
       }
-      window.location.href = "/dashboard";
+
+      window.location.href = "/auth/login";
     } catch {
       setServerError("Something went wrong. Please try again.");
       setSubmitting(false);

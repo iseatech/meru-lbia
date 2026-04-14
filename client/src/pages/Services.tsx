@@ -1,6 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "../hooks/use-auth";
 import SEO from "../components/SEO";
+import { servicesContent } from "../mvcs/content";
+import { CtaSection, HeroSection } from "../mvcs/sections";
 
 function AuthStartButton({ href, label, testId }: { href: string; label: string; testId: string }) {
   const { isAuthenticated } = useAuth();
@@ -23,28 +25,33 @@ function AuthStartButton({ href, label, testId }: { href: string; label: string;
 }
 
 export default function Services() {
+  const stats = servicesContent.sections[0]?.stats ?? [];
+
   return (
     <>
       <SEO
-        title="Services & Pricing - Meru Express"
-        description="Executive-grade logistics decision briefs, customs compliance analysis, and combined intelligence packages. Verified PDFs with SHA-256 integrity and barcode authentication."
-        canonical="/services"
+        title={servicesContent.seo.title}
+        description={servicesContent.seo.description}
+        canonical={servicesContent.seo.canonical}
       />
 
-      <section className="services-hero">
-        <span className="hero-label services-hero-heading" data-testid="text-services-label">Intelligence That Moves Cargo</span>
-        <h1 data-testid="text-services-title">Services &amp; Pricing</h1>
-        <p className="services-hero-sub" data-testid="text-services-subtitle">
-          Every report is executive-grade, delivered as a SHA-256 verified PDF
-          with embedded barcode and QR code authentication.
-          No guesswork &mdash; just actionable intelligence you can hand to your team, your client, or your customs broker.
-        </p>
+      <>
+      {servicesContent.hero ? <HeroSection content={servicesContent.hero} /> : null}
+
+      <section className="services-overview-strip" data-testid="services-overview-strip">
+        {stats.map((item, idx) => (
+          <div key={`${item.value}-${idx}`} className="services-overview-item">
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+          </div>
+        ))}
       </section>
 
       <div className="services-cards">
 
         {/* Logistics Decision Brief */}
         <div className="sales-card" data-testid="card-logistics">
+          <div className="sales-card-eyebrow">Most requested for corridor planning</div>
           <div className="sales-card-top">
             <span className="sales-card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
@@ -69,6 +76,7 @@ export default function Services() {
 
         {/* Customs Compliance */}
         <div className="sales-card" data-testid="card-customs">
+          <div className="sales-card-eyebrow">Best for HS and customs readiness</div>
           <div className="sales-card-top">
             <span className="sales-card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
@@ -94,6 +102,7 @@ export default function Services() {
         {/* Combined */}
         <div className="sales-card sales-card-featured" data-testid="card-combined">
           <div className="sales-card-badge" data-testid="badge-best-value">Best Value</div>
+          <div className="sales-card-eyebrow">End-to-end risk and compliance coverage</div>
           <div className="sales-card-top">
             <span className="sales-card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
@@ -138,6 +147,17 @@ export default function Services() {
           </div>
         </div>
       </section>
+
+      <section className="services-final-cta">
+        {servicesContent.sections[1] ? (
+          <CtaSection
+            title={servicesContent.sections[1].title ?? ""}
+            paragraph={servicesContent.sections[1].paragraph}
+            ctas={servicesContent.sections[1].ctas ?? []}
+          />
+        ) : null}
+      </section>
+      </>
     </>
   );
 }
