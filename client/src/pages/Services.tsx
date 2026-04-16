@@ -19,7 +19,7 @@ export default function Services() {
         <SectionTitle
           eyebrow="Services"
           title="Asegure el cumplimiento de sus operaciones y elimine multas aduaneras con nuestro AI-Core"
-          description="Plataforma enterprise para importadores, freight forwarders, 3PL y equipos de compliance que operan comercio internacional de alto volumen."
+          description="Plataforma enterprise para importadores, freight forwarders, 3PL y equipos de compliance que operan comercio internacional de alto volumen. Inicie flujos reales de HS classification, duty analysis, trade document review y decision briefs."
         />
         <ValueCards items={solutionCards} />
         <FinalCTA />
