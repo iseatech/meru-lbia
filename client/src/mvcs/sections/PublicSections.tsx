@@ -65,7 +65,7 @@ export function SectionTitle({ eyebrow, title, description }: { eyebrow: string;
   );
 }
 
-export function ValueCards({ items }: { items: { title: string; description: string }[] }) {
+export function ValueCards({ items }: { items: { title: string; description: string; href?: string }[] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => (
@@ -73,7 +73,11 @@ export function ValueCards({ items }: { items: { title: string; description: str
           <div className="mb-4 h-10 w-10 rounded-[8px] border border-[#E2E8F0] bg-[#F8FAFC]" />
           <h3 className="text-lg font-bold tracking-[-0.02em] text-[#0F172A]">{item.title}</h3>
           <p className="mt-2 text-sm leading-6 text-[#334155]">{item.description}</p>
-          <Link href="/services"><span className="mt-4 inline-flex cursor-pointer text-sm font-semibold text-[#2563EB]">Explorar solución →</span></Link>
+          <Link href={item.href ?? "/services"}>
+            <span className="mt-4 inline-flex cursor-pointer text-sm font-semibold text-[#2563EB]">
+              Explorar solución →
+            </span>
+          </Link>
         </article>
       ))}
     </div>
