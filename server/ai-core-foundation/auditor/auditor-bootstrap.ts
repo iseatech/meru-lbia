@@ -27,3 +27,5 @@ export async function bootstrapAuditor(
     },
   });
 }
+
+export { bootstrapAuditor as registerAuditorBootstrapReaction };

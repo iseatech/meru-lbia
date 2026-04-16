@@ -23,3 +23,5 @@ export async function captureLearningSignal(
     payload: signal.payload,
   });
 }
+
+export { captureLearningSignal as registerLearningCaptureReaction };
